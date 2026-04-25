@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="launcher_background">#1976D2</color>
-    <string name="app_name">Umpire Assistant</string>
-    <style name="Theme.UmpireAssistant" parent="android:Theme.Material.Light.NoActionBar"/>
-</resources>
