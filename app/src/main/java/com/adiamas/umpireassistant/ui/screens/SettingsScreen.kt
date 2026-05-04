@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -73,6 +74,15 @@ fun SettingsScreen(viewModel: GameViewModel) {
             value = config.ballsPerWalk,
             onDecrement = { viewModel.updateBallsPerWalk(config.ballsPerWalk - 1) },
             onIncrement = { viewModel.updateBallsPerWalk(config.ballsPerWalk + 1) },
+            enabled = config.ballsPerWalk > 0,
+        )
+
+        StepperRow(
+            label = "Balls per walk",
+            value = config.ballsPerWalk,
+            onDecrement = { viewModel.updateBallsPerWalk(config.ballsPerWalk - 1) },
+            onIncrement = { viewModel.updateBallsPerWalk(config.ballsPerWalk + 1) },
+            suffixLabel = if (config.ballsPerWalk == 0) "(Inactive)" else null,
         )
 
         CheckboxRow(
@@ -186,7 +196,10 @@ private fun StepperRow(
     onDecrement: () -> Unit,
     onIncrement: () -> Unit,
     startPadding: Dp = 0.dp,
+    enabled: Boolean = true,
+    suffixLabel: String? = null,
 ) {
+    val labelColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -194,7 +207,13 @@ private fun StepperRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, modifier = Modifier.weight(1f))
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, color = labelColor)
+            if (suffixLabel != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(suffixLabel, color = Color(0xFFE57373), fontSize = 14.sp)
+            }
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onDecrement) {
                 Text("−", fontSize = 20.sp, fontWeight = FontWeight.Bold)
