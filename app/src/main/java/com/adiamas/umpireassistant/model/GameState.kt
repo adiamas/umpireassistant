@@ -2,6 +2,8 @@ package com.adiamas.umpireassistant.model
 
 enum class Sport { BASEBALL, SOFTBALL, KICKBALL }
 
+enum class FoulMode { NOT_COUNTED, ALWAYS_STRIKES, STRIKE_CAP, INDEPENDENT }
+
 data class GameConfig(
     val homeTeamName: String = "Home",
     val awayTeamName: String = "Away",
@@ -9,9 +11,8 @@ data class GameConfig(
     val strikesPerOut: Int = 3,
     val ballsPerWalk: Int = 4,
     val outsPerInning: Int = 3,
-    val countFouls: Boolean = true,
-    val foulsCanCauseOut: Boolean = true,
-    val countFoulsAsStrikes: Boolean = true,
+    val inningsPerGame: Int = 7,
+    val foulMode: FoulMode = FoulMode.ALWAYS_STRIKES,
     val maxFoulCount: Int = 2,
     val foulsPerOut: Int = 3,
 )

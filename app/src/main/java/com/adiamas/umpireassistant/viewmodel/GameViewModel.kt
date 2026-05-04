@@ -1,6 +1,7 @@
 package com.adiamas.umpireassistant.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
 import com.adiamas.umpireassistant.model.Sport
@@ -42,11 +43,21 @@ class GameViewModel : ViewModel() {
     }
 
     fun incrementFouls() {
-        val newFouls = _state.value.fouls + 1
-        if (newFouls >= 4) {
-            incrementOuts()
-        } else {
-            update { copy(fouls = newFouls) }
+        val config = _config.value
+        val state = _state.value
+        when (config.foulMode) {
+            FoulMode.NOT_COUNTED -> Unit
+            FoulMode.ALWAYS_STRIKES -> incrementStrikes()
+            FoulMode.STRIKE_CAP -> {
+                val newFouls = state.fouls + 1
+                update { copy(fouls = newFouls) }
+                if (newFouls <= config.maxFoulCount) incrementStrikes()
+            }
+            FoulMode.INDEPENDENT -> {
+                val newFouls = state.fouls + 1
+                if (newFouls >= config.foulsPerOut) incrementOuts()
+                else update { copy(fouls = newFouls) }
+            }
         }
     }
 
@@ -90,10 +101,11 @@ class GameViewModel : ViewModel() {
 
     fun updateStrikesPerOut(value: Int) = updateConfig {
         val newValue = value.coerceIn(0, 5)
+        val newFoulMode = if (newValue == 0 && (foulMode == FoulMode.ALWAYS_STRIKES || foulMode == FoulMode.STRIKE_CAP))
+            FoulMode.NOT_COUNTED else foulMode
         copy(
             strikesPerOut = newValue,
-            countFoulsAsStrikes = if (newValue == 0) false else countFoulsAsStrikes,
-            foulsCanCauseOut = if (newValue == 1 && countFoulsAsStrikes) true else foulsCanCauseOut,
+            foulMode = newFoulMode,
             maxFoulCount = maxFoulCount.coerceIn(1, (newValue - 1).coerceAtLeast(1)),
         )
     }
@@ -102,19 +114,9 @@ class GameViewModel : ViewModel() {
 
     fun updateOutsPerInning(value: Int) = updateConfig { copy(outsPerInning = value.coerceIn(1, 5)) }
 
-    fun updateCountFouls(value: Boolean) = updateConfig { copy(countFouls = value) }
+    fun updateInningsPerGame(value: Int) = updateConfig { copy(inningsPerGame = value.coerceIn(1, 20)) }
 
-    fun updateFoulsCanCauseOut(value: Boolean) = updateConfig {
-        if (!value && strikesPerOut == 1 && countFoulsAsStrikes) return@updateConfig this
-        copy(foulsCanCauseOut = value)
-    }
-
-    fun updateCountFoulsAsStrikes(value: Boolean) = updateConfig {
-        copy(
-            countFoulsAsStrikes = value,
-            foulsCanCauseOut = if (value && strikesPerOut == 1) true else foulsCanCauseOut,
-        )
-    }
+    fun updateFoulMode(mode: FoulMode) = updateConfig { copy(foulMode = mode) }
 
     fun updateMaxFoulCount(value: Int) = updateConfig {
         copy(maxFoulCount = value.coerceIn(1, (strikesPerOut - 1).coerceAtLeast(1)))

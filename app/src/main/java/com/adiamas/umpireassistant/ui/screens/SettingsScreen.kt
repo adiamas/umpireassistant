@@ -3,7 +3,6 @@ package com.adiamas.umpireassistant.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,10 +12,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,15 +35,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
-private val INDENT_1 = 32.dp
-private val INDENT_2 = 64.dp
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: GameViewModel) {
     val config by viewModel.config.collectAsState()
     var showResetConfirm by remember { mutableStateOf(false) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -52,7 +55,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        Text("Pitch Count Rules", style = MaterialTheme.typography.titleMedium)
+        Text("Game Settings", style = MaterialTheme.typography.titleMedium)
+
+        StepperRow(
+            label = "Innings per game",
+            value = config.inningsPerGame,
+            onDecrement = { viewModel.updateInningsPerGame(config.inningsPerGame - 1) },
+            onIncrement = { viewModel.updateInningsPerGame(config.inningsPerGame + 1) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text("Pitch Count Settings", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Set any option to Off to disable it in game view.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
         StepperRow(
             label = "Outs per inning",
@@ -66,6 +84,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             value = config.strikesPerOut,
             onDecrement = { viewModel.updateStrikesPerOut(config.strikesPerOut - 1) },
             onIncrement = { viewModel.updateStrikesPerOut(config.strikesPerOut + 1) },
+            showOffAtZero = true,
         )
 
         StepperRow(
@@ -73,57 +92,54 @@ fun SettingsScreen(viewModel: GameViewModel) {
             value = config.ballsPerWalk,
             onDecrement = { viewModel.updateBallsPerWalk(config.ballsPerWalk - 1) },
             onIncrement = { viewModel.updateBallsPerWalk(config.ballsPerWalk + 1) },
+            showOffAtZero = true,
         )
 
-        CheckboxRow(
-            label = "Count fouls?",
-            checked = config.countFouls,
-            onCheckedChange = { viewModel.updateCountFouls(it) },
-        )
-
-        if (config.countFouls) {
-            if (config.strikesPerOut > 0) {
-                CheckboxRow(
-                    label = "Count fouls as strikes?",
-                    checked = config.countFoulsAsStrikes,
-                    onCheckedChange = { viewModel.updateCountFoulsAsStrikes(it) },
-                    startPadding = INDENT_1,
-                )
-            }
-            if (!config.countFoulsAsStrikes) {
-                CheckboxRow(
-                    label = "Allow foul outs?",
-                    checked = config.foulsCanCauseOut,
-                    onCheckedChange = { viewModel.updateFoulsCanCauseOut(it) },
-                    startPadding = INDENT_1,
-                )
-                if (config.foulsCanCauseOut) {
-                    StepperRow(
-                        label = "Fouls per out",
-                        value = config.foulsPerOut,
-                        onDecrement = { viewModel.updateFoulsPerOut(config.foulsPerOut - 1) },
-                        onIncrement = { viewModel.updateFoulsPerOut(config.foulsPerOut + 1) },
-                        startPadding = INDENT_2,
-                    )
-                }
-            } else {
-                CheckboxRow(
-                    label = "Allow foul outs?",
-                    checked = config.foulsCanCauseOut,
-                    onCheckedChange = { viewModel.updateFoulsCanCauseOut(it) },
-                    startPadding = INDENT_2,
-                    enabled = !(config.strikesPerOut == 1 && config.countFoulsAsStrikes),
-                )
-                if (!config.foulsCanCauseOut) {
-                    StepperRow(
-                        label = "Max foul count",
-                        value = config.maxFoulCount,
-                        onDecrement = { viewModel.updateMaxFoulCount(config.maxFoulCount - 1) },
-                        onIncrement = { viewModel.updateMaxFoulCount(config.maxFoulCount + 1) },
-                        startPadding = INDENT_2,
+        Text("Fouls are:")
+        ExposedDropdownMenuBox(
+            expanded = dropdownExpanded,
+            onExpandedChange = { dropdownExpanded = it },
+        ) {
+            OutlinedTextField(
+                value = config.foulMode.label(),
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+            )
+            ExposedDropdownMenu(
+                expanded = dropdownExpanded,
+                onDismissRequest = { dropdownExpanded = false },
+            ) {
+                FoulMode.entries.forEach { mode ->
+                    DropdownMenuItem(
+                        text = { Text(mode.label()) },
+                        onClick = { viewModel.updateFoulMode(mode); dropdownExpanded = false },
+                        enabled = when (mode) {
+                            FoulMode.ALWAYS_STRIKES -> config.strikesPerOut > 0
+                            FoulMode.STRIKE_CAP -> config.strikesPerOut > 1
+                            else -> true
+                        },
                     )
                 }
             }
+        }
+        if (config.foulMode == FoulMode.STRIKE_CAP) {
+            StepperRow(
+                label = "Max foul strikes",
+                value = config.maxFoulCount,
+                onDecrement = { viewModel.updateMaxFoulCount(config.maxFoulCount - 1) },
+                onIncrement = { viewModel.updateMaxFoulCount(config.maxFoulCount + 1) },
+            )
+        }
+        if (config.foulMode == FoulMode.INDEPENDENT) {
+            StepperRow(
+                label = "Fouls per out",
+                value = config.foulsPerOut,
+                onDecrement = { viewModel.updateFoulsPerOut(config.foulsPerOut - 1) },
+                onIncrement = { viewModel.updateFoulsPerOut(config.foulsPerOut + 1) },
+            )
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -159,24 +175,11 @@ fun SettingsScreen(viewModel: GameViewModel) {
     }
 }
 
-@Composable
-private fun CheckboxRow(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    startPadding: Dp = 0.dp,
-    enabled: Boolean = true,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = startPadding),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(label)
-    }
+private fun FoulMode.label() = when (this) {
+    FoulMode.NOT_COUNTED -> "Off"
+    FoulMode.ALWAYS_STRIKES -> "Strikes"
+    FoulMode.STRIKE_CAP -> "Strikes, no foul out"
+    FoulMode.INDEPENDENT -> "Fouls"
 }
 
 @Composable
@@ -186,6 +189,7 @@ private fun StepperRow(
     onDecrement: () -> Unit,
     onIncrement: () -> Unit,
     startPadding: Dp = 0.dp,
+    showOffAtZero: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -200,7 +204,7 @@ private fun StepperRow(
                 Text("−", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             Text(
-                text = "$value",
+                text = if (showOffAtZero && value == 0) "Off" else "$value",
                 modifier = Modifier.width(32.dp),
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,

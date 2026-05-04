@@ -29,11 +29,12 @@ replay_pid*
 *.iml
 .gradle
 /local.properties
-/.idea/
+.idea/
 .DS_Store
-**/build/
-*.apk
+/build
+app/build/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+.claude/
