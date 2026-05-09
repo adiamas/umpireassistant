@@ -25,8 +25,9 @@ class GameViewModel : ViewModel() {
     }
 
     fun incrementBalls() {
+        val config = _config.value
         val newBalls = _state.value.balls + 1
-        if (newBalls >= 4) {
+        if (config.ballsPerWalk > 0 && newBalls >= config.ballsPerWalk) {
             resetPitchCount()
         } else {
             update { copy(balls = newBalls) }
@@ -34,8 +35,9 @@ class GameViewModel : ViewModel() {
     }
 
     fun incrementStrikes() {
+        val config = _config.value
         val newStrikes = _state.value.strikes + 1
-        if (newStrikes >= 3) {
+        if (config.strikesPerOut > 0 && newStrikes >= config.strikesPerOut) {
             incrementOuts()
         } else {
             update { copy(strikes = newStrikes) }
@@ -63,7 +65,7 @@ class GameViewModel : ViewModel() {
 
     fun incrementOuts() {
         val newOuts = _state.value.outs + 1
-        if (newOuts >= 3) {
+        if (newOuts >= _config.value.outsPerInning) {
             advanceHalf()
         } else {
             update { copy(outs = newOuts, balls = 0, strikes = 0, fouls = 0) }
