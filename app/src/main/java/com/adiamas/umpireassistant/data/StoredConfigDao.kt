@@ -25,6 +25,12 @@ interface StoredConfigDao {
     @Delete
     suspend fun delete(config: StoredConfigEntity)
 
+    @Query("SELECT * FROM stored_configs WHERE isDefault = 1 LIMIT 1")
+    suspend fun getDefault(): StoredConfigEntity?
+
+    @Query("SELECT * FROM stored_configs WHERE name = :name LIMIT 1")
+    suspend fun getByName(name: String): StoredConfigEntity?
+
     @Query("SELECT COUNT(*) FROM stored_configs")
     suspend fun count(): Int
 }

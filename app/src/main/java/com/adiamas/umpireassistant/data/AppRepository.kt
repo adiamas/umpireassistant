@@ -10,14 +10,13 @@ class AppRepository(private val db: AppDatabase) {
     fun getTeamsForConfig(configId: Int): Flow<List<TeamEntity>> =
         db.teamDao().getTeamsForConfig(configId)
 
-    suspend fun insertConfig(config: StoredConfigEntity): Long =
-        db.storedConfigDao().insert(config)
+    suspend fun getConfigById(id: Int): StoredConfigEntity? = db.storedConfigDao().getById(id)
+    suspend fun getConfigByName(name: String): StoredConfigEntity? = db.storedConfigDao().getByName(name)
+    suspend fun getDefaultConfig(): StoredConfigEntity? = db.storedConfigDao().getDefault()
 
-    suspend fun updateConfig(config: StoredConfigEntity) =
-        db.storedConfigDao().update(config)
-
-    suspend fun deleteConfig(config: StoredConfigEntity) =
-        db.storedConfigDao().delete(config)
+    suspend fun insertConfig(config: StoredConfigEntity): Long = db.storedConfigDao().insert(config)
+    suspend fun updateConfig(config: StoredConfigEntity) = db.storedConfigDao().update(config)
+    suspend fun deleteConfig(config: StoredConfigEntity) = db.storedConfigDao().delete(config)
 
     suspend fun addTeam(team: TeamEntity) = db.teamDao().insert(team)
     suspend fun updateTeam(team: TeamEntity) = db.teamDao().update(team)
@@ -26,11 +25,10 @@ class AppRepository(private val db: AppDatabase) {
     suspend fun saveSession(session: AppSessionEntity) = db.appSessionDao().save(session)
 
     suspend fun ensureDefaultConfig(): Int {
-        if (db.storedConfigDao().count() == 0) {
-            return db.storedConfigDao().insert(
-                StoredConfigEntity(name = "Default", isDefault = true)
-            ).toInt()
-        }
-        return 0
+        val existing = db.storedConfigDao().getDefault()
+        if (existing != null) return existing.id
+        return db.storedConfigDao().insert(
+            StoredConfigEntity(name = "Default", isDefault = true)
+        ).toInt()
     }
 }

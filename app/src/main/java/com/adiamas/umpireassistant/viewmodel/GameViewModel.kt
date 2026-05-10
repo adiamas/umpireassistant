@@ -1,20 +1,31 @@
 package com.adiamas.umpireassistant.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.adiamas.umpireassistant.data.AppDatabase
+import com.adiamas.umpireassistant.data.AppRepository
+import com.adiamas.umpireassistant.data.AppSessionEntity
+import com.adiamas.umpireassistant.data.StoredConfigEntity
+import com.adiamas.umpireassistant.data.TeamEntity
 import com.adiamas.umpireassistant.model.FoulMode
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
 import com.adiamas.umpireassistant.model.Sport
 import com.adiamas.umpireassistant.model.VolumeAction
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 
-class GameViewModel : ViewModel() {
+class GameViewModel(application: Application) : AndroidViewModel(application) {
+    private val repo = AppRepository(AppDatabase.getInstance(application))
+
     private val _config = MutableStateFlow(GameConfig())
     val config: StateFlow<GameConfig> = _config.asStateFlow()
 
@@ -36,6 +47,64 @@ class GameViewModel : ViewModel() {
     private val _canRedo = MutableStateFlow(false)
     val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
     val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
+
+    private val _activeConfigId = MutableStateFlow(0)
+    val activeConfigId: StateFlow<Int> = _activeConfigId.asStateFlow()
+
+    private val _isDirty = MutableStateFlow(false)
+    val isDirty: StateFlow<Boolean> = _isDirty.asStateFlow()
+
+    private val _storedConfigs = MutableStateFlow<List<StoredConfigEntity>>(emptyList())
+    val storedConfigs: StateFlow<List<StoredConfigEntity>> = _storedConfigs.asStateFlow()
+
+    private val _teams = MutableStateFlow<List<TeamEntity>>(emptyList())
+    val teams: StateFlow<List<TeamEntity>> = _teams.asStateFlow()
+
+    private var sessionSaveJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            val defaultId = repo.ensureDefaultConfig()
+            val session = repo.session.first()
+            val configId = session?.activeConfigId?.takeIf { it > 0 } ?: defaultId
+            val storedConfig = repo.getConfigById(configId) ?: repo.getDefaultConfig() ?: return@launch
+            applyStoredConfig(storedConfig, session)
+        }
+        viewModelScope.launch {
+            repo.configs.collect { _storedConfigs.value = it }
+        }
+        viewModelScope.launch {
+            _activeConfigId.flatMapLatest { id ->
+                if (id > 0) repo.getTeamsForConfig(id) else flowOf(emptyList())
+            }.collect { _teams.value = it }
+        }
+    }
+
+    private fun applyStoredConfig(storedConfig: StoredConfigEntity, session: AppSessionEntity?) {
+        _activeConfigId.value = storedConfig.id
+        _config.value = storedConfig.toGameConfig(
+            homeTeamName = session?.homeTeamName ?: "Home",
+            awayTeamName = session?.awayTeamName ?: "Away",
+        )
+        if (session != null) {
+            _state.value = GameState(
+                homeScore = session.homeScore,
+                awayScore = session.awayScore,
+                inning = session.inning,
+                isTopHalf = session.isTopHalf,
+                balls = session.balls,
+                strikes = session.strikes,
+                fouls = session.fouls,
+                outs = session.outs,
+            )
+            _timerSeconds.value = if (session.timerSeconds >= 0) session.timerSeconds
+                                   else storedConfig.gameLengthMinutes * 60
+        } else {
+            _timerSeconds.value = storedConfig.gameLengthMinutes * 60
+        }
+    }
+
+    // ── state helpers ─────────────────────────────────────────────────────────
 
     private inline fun action(block: () -> Unit) {
         if (_actionDepth == 0) _actionSnapshot = _state.value
@@ -60,11 +129,43 @@ class GameViewModel : ViewModel() {
 
     private fun update(block: GameState.() -> GameState) {
         _state.value = _state.value.block()
+        scheduleSessionSave()
     }
 
     private fun updateConfig(block: GameConfig.() -> GameConfig) {
         _config.value = _config.value.block()
+        _isDirty.value = true
     }
+
+    private fun scheduleSessionSave() {
+        sessionSaveJob?.cancel()
+        sessionSaveJob = viewModelScope.launch {
+            delay(500)
+            persistSession()
+        }
+    }
+
+    private suspend fun persistSession() {
+        if (_activeConfigId.value == 0) return
+        val s = _state.value
+        val c = _config.value
+        repo.saveSession(AppSessionEntity(
+            activeConfigId = _activeConfigId.value,
+            homeTeamName = c.homeTeamName,
+            awayTeamName = c.awayTeamName,
+            homeScore = s.homeScore,
+            awayScore = s.awayScore,
+            inning = s.inning,
+            isTopHalf = s.isTopHalf,
+            balls = s.balls,
+            strikes = s.strikes,
+            fouls = s.fouls,
+            outs = s.outs,
+            timerSeconds = _timerSeconds.value,
+        ))
+    }
+
+    // ── game actions ──────────────────────────────────────────────────────────
 
     fun incrementBalls() = action {
         val config = _config.value
@@ -127,13 +228,19 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun updateTeamNames(homeName: String, awayName: String) =
-        updateConfig {
-            copy(
-                homeTeamName = homeName.ifBlank { "Home" },
-                awayTeamName = awayName.ifBlank { "Away" },
-            )
-        }
+    // ── team names (session state, not config dirty) ──────────────────────────
+
+    fun selectHomeTeam(name: String) {
+        _config.value = _config.value.copy(homeTeamName = name)
+        scheduleSessionSave()
+    }
+
+    fun selectAwayTeam(name: String) {
+        _config.value = _config.value.copy(awayTeamName = name)
+        scheduleSessionSave()
+    }
+
+    // ── config settings ───────────────────────────────────────────────────────
 
     fun updateSport(sport: Sport) = updateConfig { copy(sport = sport) }
 
@@ -149,11 +256,8 @@ class GameViewModel : ViewModel() {
     }
 
     fun updateBallsPerWalk(value: Int) = updateConfig { copy(ballsPerWalk = value.coerceIn(0, 5)) }
-
     fun updateOutsPerInning(value: Int) = updateConfig { copy(outsPerInning = value.coerceIn(1, 5)) }
-
     fun updateInningsPerGame(value: Int) = updateConfig { copy(inningsPerGame = value.coerceIn(1, 20)) }
-
     fun updateFoulMode(mode: FoulMode) = updateConfig { copy(foulMode = mode) }
 
     fun updateMaxFoulCount(value: Int) = updateConfig {
@@ -161,7 +265,6 @@ class GameViewModel : ViewModel() {
     }
 
     fun updateFoulsPerOut(value: Int) = updateConfig { copy(foulsPerOut = value.coerceIn(1, 5)) }
-
     fun updateVolumeUp(action: VolumeAction) = updateConfig { copy(volumeUp = action) }
     fun updateVolumeDown(action: VolumeAction) = updateConfig { copy(volumeDown = action) }
 
@@ -169,6 +272,79 @@ class GameViewModel : ViewModel() {
         updateConfig { copy(gameLengthMinutes = value.coerceIn(0, 120)) }
         if (!_timerRunning.value) _timerSeconds.value = _config.value.gameLengthMinutes * 60
     }
+
+    // ── stored config management ──────────────────────────────────────────────
+
+    fun switchConfig(id: Int) {
+        viewModelScope.launch {
+            val storedConfig = repo.getConfigById(id) ?: return@launch
+            val currentHome = _config.value.homeTeamName
+            val currentAway = _config.value.awayTeamName
+            _state.value = GameState()
+            _undoStack.clear(); _redoStack.clear()
+            _canUndo.value = false; _canRedo.value = false
+            _activeConfigId.value = storedConfig.id
+            _config.value = storedConfig.toGameConfig(homeTeamName = currentHome, awayTeamName = currentAway)
+            _timerSeconds.value = storedConfig.gameLengthMinutes * 60
+            _isDirty.value = false
+            scheduleSessionSave()
+        }
+    }
+
+    fun saveCurrentConfig(name: String) {
+        viewModelScope.launch {
+            val c = _config.value
+            val existing = repo.getConfigByName(name)
+            val entity = StoredConfigEntity(
+                id = existing?.id ?: 0,
+                name = name,
+                isDefault = existing?.isDefault ?: false,
+                sport = c.sport.name,
+                strikesPerOut = c.strikesPerOut,
+                ballsPerWalk = c.ballsPerWalk,
+                outsPerInning = c.outsPerInning,
+                inningsPerGame = c.inningsPerGame,
+                foulMode = c.foulMode.name,
+                maxFoulCount = c.maxFoulCount,
+                foulsPerOut = c.foulsPerOut,
+                volumeUp = c.volumeUp.name,
+                volumeDown = c.volumeDown.name,
+                gameLengthMinutes = c.gameLengthMinutes,
+            )
+            val savedId = if (existing != null) {
+                repo.updateConfig(entity); existing.id
+            } else {
+                repo.insertConfig(entity).toInt()
+            }
+            _activeConfigId.value = savedId
+            _isDirty.value = false
+            scheduleSessionSave()
+        }
+    }
+
+    fun deleteStoredConfig(id: Int) {
+        viewModelScope.launch {
+            val toDelete = repo.getConfigById(id) ?: return@launch
+            if (toDelete.isDefault) return@launch
+            repo.deleteConfig(toDelete)
+            if (_activeConfigId.value == id) {
+                val default = repo.getDefaultConfig() ?: return@launch
+                switchConfig(default.id)
+            }
+        }
+    }
+
+    // ── team management ───────────────────────────────────────────────────────
+
+    fun addTeam(name: String) {
+        if (_activeConfigId.value == 0) return
+        viewModelScope.launch { repo.addTeam(TeamEntity(configId = _activeConfigId.value, name = name)) }
+    }
+
+    fun updateTeam(team: TeamEntity) { viewModelScope.launch { repo.updateTeam(team) } }
+    fun deleteTeam(team: TeamEntity) { viewModelScope.launch { repo.deleteTeam(team) } }
+
+    // ── timer ─────────────────────────────────────────────────────────────────
 
     fun toggleTimer() {
         if (_timerRunning.value) {
@@ -193,6 +369,28 @@ class GameViewModel : ViewModel() {
         _timerSeconds.value = _config.value.gameLengthMinutes * 60
     }
 
+    // ── undo / redo ───────────────────────────────────────────────────────────
+
+    fun undo() {
+        if (_undoStack.isEmpty()) return
+        _redoStack.add(_state.value)
+        _state.value = _undoStack.removeLast()
+        _canUndo.value = _undoStack.isNotEmpty()
+        _canRedo.value = true
+        scheduleSessionSave()
+    }
+
+    fun redo() {
+        if (_redoStack.isEmpty()) return
+        _undoStack.add(_state.value)
+        _state.value = _redoStack.removeLast()
+        _canUndo.value = true
+        _canRedo.value = _redoStack.isNotEmpty()
+        scheduleSessionSave()
+    }
+
+    // ── volume buttons ────────────────────────────────────────────────────────
+
     fun dispatchVolumeAction(action: VolumeAction): Boolean {
         when (action) {
             VolumeAction.OFF -> return false
@@ -206,24 +404,41 @@ class GameViewModel : ViewModel() {
         return true
     }
 
-    fun undo() {
-        if (_undoStack.isEmpty()) return
-        _redoStack.add(_state.value)
-        _state.value = _undoStack.removeLast()
-        _canUndo.value = _undoStack.isNotEmpty()
-        _canRedo.value = true
+    // ── team names (TeamsScreen compat) ───────────────────────────────────────
+
+    fun updateTeamNames(homeName: String, awayName: String) {
+        _config.value = _config.value.copy(
+            homeTeamName = homeName.ifBlank { "Home" },
+            awayTeamName = awayName.ifBlank { "Away" },
+        )
+        scheduleSessionSave()
     }
 
-    fun redo() {
-        if (_redoStack.isEmpty()) return
-        _undoStack.add(_state.value)
-        _state.value = _redoStack.removeLast()
-        _canUndo.value = true
-        _canRedo.value = _redoStack.isNotEmpty()
-    }
+    // ── reset ─────────────────────────────────────────────────────────────────
 
-    fun resetGame() = action {
+    fun resetGame() {
         _state.value = GameState()
+        _undoStack.clear(); _redoStack.clear()
+        _canUndo.value = false; _canRedo.value = false
         resetTimer()
+        scheduleSessionSave()
     }
 }
+
+// ── mapping helpers ───────────────────────────────────────────────────────────
+
+private fun StoredConfigEntity.toGameConfig(homeTeamName: String, awayTeamName: String) = GameConfig(
+    homeTeamName = homeTeamName,
+    awayTeamName = awayTeamName,
+    sport = Sport.valueOf(sport),
+    strikesPerOut = strikesPerOut,
+    ballsPerWalk = ballsPerWalk,
+    outsPerInning = outsPerInning,
+    inningsPerGame = inningsPerGame,
+    foulMode = FoulMode.valueOf(foulMode),
+    maxFoulCount = maxFoulCount,
+    foulsPerOut = foulsPerOut,
+    volumeUp = VolumeAction.valueOf(volumeUp),
+    volumeDown = VolumeAction.valueOf(volumeDown),
+    gameLengthMinutes = gameLengthMinutes,
+)
