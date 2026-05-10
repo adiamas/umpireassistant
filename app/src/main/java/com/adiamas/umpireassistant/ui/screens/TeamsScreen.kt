@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.adiamas.umpireassistant.data.TeamEntity
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
@@ -86,7 +87,15 @@ fun TeamsScreen(viewModel: GameViewModel) {
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(team.name, style = MaterialTheme.typography.bodyLarge)
+                    Text(team.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    team.color?.let { colorInt ->
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(Color(colorInt))
+                        )
+                    }
                 }
                 if (index < teams.lastIndex) HorizontalDivider()
             }
@@ -154,7 +163,7 @@ private fun AddTeamDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
 @Composable
 private fun EditTeamDialog(team: TeamEntity, onDismiss: () -> Unit, onSave: (TeamEntity) -> Unit) {
     var name by remember { mutableStateOf(team.name) }
-    var selectedColor by remember { mutableStateOf<Color?>(null) }
+    var selectedColor by remember { mutableStateOf(team.color?.let { Color(it) }) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Team") },
@@ -176,7 +185,7 @@ private fun EditTeamDialog(team: TeamEntity, onDismiss: () -> Unit, onSave: (Tea
         },
         confirmButton = {
             TextButton(
-                onClick = { if (name.isNotBlank()) onSave(team.copy(name = name.trim())) },
+                onClick = { if (name.isNotBlank()) onSave(team.copy(name = name.trim(), color = selectedColor?.toArgb())) },
                 enabled = name.isNotBlank(),
             ) { Text("Save") }
         },
