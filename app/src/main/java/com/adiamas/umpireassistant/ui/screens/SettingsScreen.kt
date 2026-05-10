@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adiamas.umpireassistant.data.StoredConfigEntity
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.model.VolumeAction
@@ -56,9 +57,15 @@ import com.adiamas.umpireassistant.viewmodel.GameViewModel
 fun SettingsScreen(viewModel: GameViewModel) {
     val config by viewModel.config.collectAsState()
     val state by viewModel.state.collectAsState()
+    val storedConfigs by viewModel.storedConfigs.collectAsState()
+    val activeConfigId by viewModel.activeConfigId.collectAsState()
+    val isDirty by viewModel.isDirty.collectAsState()
     val context = LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
+    var showSaveConfigDialog by remember { mutableStateOf(false) }
+    var configDropdownExpanded by remember { mutableStateOf(false) }
     var dropdownExpanded by remember { mutableStateOf(false) }
+    val activeConfig = storedConfigs.find { it.id == activeConfigId }
 
     Column(
         modifier = Modifier
@@ -68,6 +75,40 @@ fun SettingsScreen(viewModel: GameViewModel) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
+        ExposedDropdownMenuBox(
+            expanded = configDropdownExpanded,
+            onExpandedChange = { configDropdownExpanded = it },
+        ) {
+            OutlinedTextField(
+                value = activeConfig?.name ?: "",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = configDropdownExpanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+            )
+            ExposedDropdownMenu(
+                expanded = configDropdownExpanded,
+                onDismissRequest = { configDropdownExpanded = false },
+            ) {
+                storedConfigs.forEach { sc ->
+                    DropdownMenuItem(
+                        text = { Text(sc.name) },
+                        onClick = { viewModel.switchConfig(sc.id); configDropdownExpanded = false },
+                    )
+                }
+            }
+        }
+        if (isDirty) {
+            Button(
+                onClick = { showSaveConfigDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+            ) { Text("Save Settings") }
+        }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -245,6 +286,60 @@ fun SettingsScreen(viewModel: GameViewModel) {
             },
         )
     }
+
+    if (showSaveConfigDialog) {
+        SaveConfigDialog(
+            currentName = activeConfig?.name ?: "",
+            onDismiss = { showSaveConfigDialog = false },
+            onSave = { name ->
+                viewModel.saveCurrentConfig(name)
+                showSaveConfigDialog = false
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SaveConfigDialog(
+    currentName: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var name by remember { mutableStateOf(currentName) }
+    var showDefaultWarning by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Save Settings") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it; showDefaultWarning = false },
+                    label = { Text("Configuration name") },
+                    singleLine = true,
+                )
+                if (showDefaultWarning) {
+                    Text(
+                        "Cannot overwrite Default settings.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (name.trim().equals("Default", ignoreCase = true)) {
+                    showDefaultWarning = true
+                } else {
+                    onSave(name.trim())
+                }
+            }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
