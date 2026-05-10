@@ -17,6 +17,37 @@ class GameViewModel : ViewModel() {
     private val _state = MutableStateFlow(GameState())
     val state: StateFlow<GameState> = _state.asStateFlow()
 
+    private val _undoStack = mutableListOf<GameState>()
+    private val _redoStack = mutableListOf<GameState>()
+    private var _actionDepth = 0
+    private var _actionSnapshot: GameState? = null
+
+    private val _canUndo = MutableStateFlow(false)
+    private val _canRedo = MutableStateFlow(false)
+    val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+    val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
+
+    private inline fun action(block: () -> Unit) {
+        if (_actionDepth == 0) _actionSnapshot = _state.value
+        _actionDepth++
+        try {
+            block()
+        } finally {
+            _actionDepth--
+            if (_actionDepth == 0) {
+                _actionSnapshot?.let { snapshot ->
+                    if (snapshot != _state.value) {
+                        _undoStack.add(snapshot)
+                        _redoStack.clear()
+                        _canUndo.value = true
+                        _canRedo.value = false
+                    }
+                    _actionSnapshot = null
+                }
+            }
+        }
+    }
+
     private fun update(block: GameState.() -> GameState) {
         _state.value = _state.value.block()
     }
@@ -25,29 +56,23 @@ class GameViewModel : ViewModel() {
         _config.value = _config.value.block()
     }
 
-    fun incrementBalls() {
+    fun incrementBalls() = action {
         val config = _config.value
-        if (config.ballsPerWalk == 0) return
+        if (config.ballsPerWalk == 0) return@action
         val newBalls = _state.value.balls + 1
-        if (newBalls >= config.ballsPerWalk) {
-            resetPitchCount()
-        } else {
-            update { copy(balls = newBalls) }
-        }
+        if (newBalls >= config.ballsPerWalk) resetPitchCount()
+        else update { copy(balls = newBalls) }
     }
 
-    fun incrementStrikes() {
+    fun incrementStrikes() = action {
         val config = _config.value
-        if (config.strikesPerOut == 0) return
+        if (config.strikesPerOut == 0) return@action
         val newStrikes = _state.value.strikes + 1
-        if (newStrikes >= config.strikesPerOut) {
-            incrementOuts()
-        } else {
-            update { copy(strikes = newStrikes) }
-        }
+        if (newStrikes >= config.strikesPerOut) incrementOuts()
+        else update { copy(strikes = newStrikes) }
     }
 
-    fun incrementFouls() {
+    fun incrementFouls() = action {
         val config = _config.value
         val state = _state.value
         when (config.foulMode) {
@@ -70,27 +95,21 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun incrementOuts() {
+    fun incrementOuts() = action {
         val newOuts = _state.value.outs + 1
-        if (newOuts >= _config.value.outsPerInning) {
-            advanceHalf()
-        } else {
-            update { copy(outs = newOuts, balls = 0, strikes = 0, fouls = 0) }
-        }
+        if (newOuts >= _config.value.outsPerInning) advanceHalf()
+        else update { copy(outs = newOuts, balls = 0, strikes = 0, fouls = 0) }
     }
 
-    fun addRun() {
-        if (_state.value.isTopHalf) {
-            update { copy(awayScore = awayScore + 1) }
-        } else {
-            update { copy(homeScore = homeScore + 1) }
-        }
+    fun addRun() = action {
+        if (_state.value.isTopHalf) update { copy(awayScore = awayScore + 1) }
+        else update { copy(homeScore = homeScore + 1) }
         resetPitchCount()
     }
 
-    fun resetPitchCount() = update { copy(balls = 0, strikes = 0, fouls = 0) }
+    fun resetPitchCount() = action { update { copy(balls = 0, strikes = 0, fouls = 0) } }
 
-    fun advanceHalf() {
+    fun advanceHalf() = action {
         if (_state.value.isTopHalf) {
             update { copy(isTopHalf = false, balls = 0, strikes = 0, fouls = 0, outs = 0) }
         } else {
@@ -149,7 +168,21 @@ class GameViewModel : ViewModel() {
         return true
     }
 
-    fun resetGame() {
-        _state.value = GameState()
+    fun undo() {
+        if (_undoStack.isEmpty()) return
+        _redoStack.add(_state.value)
+        _state.value = _undoStack.removeLast()
+        _canUndo.value = _undoStack.isNotEmpty()
+        _canRedo.value = true
     }
+
+    fun redo() {
+        if (_redoStack.isEmpty()) return
+        _undoStack.add(_state.value)
+        _state.value = _redoStack.removeLast()
+        _canUndo.value = true
+        _canRedo.value = _redoStack.isNotEmpty()
+    }
+
+    fun resetGame() = action { _state.value = GameState() }
 }
