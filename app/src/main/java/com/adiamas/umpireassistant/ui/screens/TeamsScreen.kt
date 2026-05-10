@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.adiamas.umpireassistant.data.TeamEntity
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
+import com.adiamas.umpireassistant.ui.theme.AppBackground
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
 private val teamColors = listOf(
@@ -62,6 +63,7 @@ fun TeamsScreen(viewModel: GameViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(AppBackground)
             .padding(16.dp),
     ) {
         Text("Teams", style = MaterialTheme.typography.headlineMedium)
@@ -87,7 +89,7 @@ fun TeamsScreen(viewModel: GameViewModel) {
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(team.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(team.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
                     team.color?.let { colorInt ->
                         Box(
                             modifier = Modifier

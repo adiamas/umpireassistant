@@ -1,5 +1,6 @@
 package com.adiamas.umpireassistant.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.data.StoredConfigEntity
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
+import com.adiamas.umpireassistant.ui.theme.AppBackground
 import com.adiamas.umpireassistant.model.VolumeAction
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
@@ -70,6 +72,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(AppBackground)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(4.dp),
