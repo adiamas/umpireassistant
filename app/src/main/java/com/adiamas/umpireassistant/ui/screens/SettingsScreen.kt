@@ -22,8 +22,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -64,28 +70,50 @@ fun SettingsScreen(viewModel: GameViewModel) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        Button(
-            onClick = {
-                val date = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-                val text = "$date\n${config.awayTeamName} - ${state.awayScore}\n${config.homeTeamName} - ${state.homeScore}"
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, text)
-                }
-                context.startActivity(Intent.createChooser(intent, null))
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
-        ) {
-            Text("Share Game Score")
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Color(0xFFFFB300))
+                Text(
+                    "Set any option to Off to disable it in game view.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
-        Button(
-            onClick = { showResetConfirm = true },
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text("Game Status", style = MaterialTheme.typography.titleMedium)
+
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("Reset Clicker")
+            Button(
+                onClick = {
+                    val date = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                    val text = "$date\n${config.awayTeamName} - ${state.awayScore}\n${config.homeTeamName} - ${state.homeScore}"
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    context.startActivity(Intent.createChooser(intent, null))
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+            ) {
+                Text("Share Game Score")
+            }
+            Button(
+                onClick = { showResetConfirm = true },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+            ) {
+                Text("Reset Clicker")
+            }
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -98,13 +126,16 @@ fun SettingsScreen(viewModel: GameViewModel) {
             onIncrement = { viewModel.updateInningsPerGame(config.inningsPerGame + 1) },
         )
 
+        StepperRow(
+            label = "Game length (min)",
+            value = config.gameLengthMinutes,
+            onDecrement = { viewModel.updateGameLengthMinutes(config.gameLengthMinutes - 5) },
+            onIncrement = { viewModel.updateGameLengthMinutes(config.gameLengthMinutes + 5) },
+            showOffAtZero = true,
+        )
+
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text("Pitch Count Settings", style = MaterialTheme.typography.titleMedium)
-        Text(
-            "Set any option to Off to disable it in game view.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
 
         StepperRow(
             label = "Outs per inning",
