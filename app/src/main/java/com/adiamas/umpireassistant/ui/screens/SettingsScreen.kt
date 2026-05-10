@@ -79,7 +79,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
         ExposedDropdownMenuBox(
             expanded = configDropdownExpanded,
@@ -113,7 +113,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             ) { Text("Save Settings") }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         OutlinedCard(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.padding(12.dp),
@@ -129,7 +129,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Game Status", style = MaterialTheme.typography.titleMedium)
 
         Row(
@@ -160,7 +160,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Game Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
@@ -178,7 +178,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             showOffAtZero = true,
         )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Pitch Count Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
@@ -251,7 +251,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Volume Button Assignments", style = MaterialTheme.typography.titleMedium)
 
         Text("Volume up")

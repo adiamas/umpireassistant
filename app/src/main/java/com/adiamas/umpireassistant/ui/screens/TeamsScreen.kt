@@ -86,10 +86,10 @@ fun TeamsScreen(viewModel: GameViewModel) {
                 ) {
                     Text(
                         text = "${index + 1}.",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(team.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                    Text(team.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     team.color?.let { colorInt ->
                         Box(
                             modifier = Modifier
@@ -99,7 +99,7 @@ fun TeamsScreen(viewModel: GameViewModel) {
                         )
                     }
                 }
-                if (index < teams.lastIndex) HorizontalDivider()
+                if (index < teams.lastIndex) HorizontalDivider(color = Color.DarkGray)
             }
         }
 
