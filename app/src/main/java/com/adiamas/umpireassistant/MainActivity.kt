@@ -1,6 +1,7 @@
 package com.adiamas.umpireassistant
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -29,6 +30,16 @@ import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: GameViewModel by viewModels()
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        val action = when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> viewModel.config.value.volumeUp
+            KeyEvent.KEYCODE_VOLUME_DOWN -> viewModel.config.value.volumeDown
+            else -> return super.onKeyDown(keyCode, event)
+        }
+        return if (viewModel.dispatchVolumeAction(action)) true
+        else super.onKeyDown(keyCode, event)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

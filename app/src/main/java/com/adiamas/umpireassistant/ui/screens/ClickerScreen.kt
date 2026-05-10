@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,8 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Redo
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,6 +48,8 @@ import com.adiamas.umpireassistant.viewmodel.GameViewModel
 fun ClickerScreen(viewModel: GameViewModel) {
     val state by viewModel.state.collectAsState()
     val config by viewModel.config.collectAsState()
+    val canUndo by viewModel.canUndo.collectAsState()
+    val canRedo by viewModel.canRedo.collectAsState()
 
     Column(
         modifier = Modifier
@@ -66,6 +74,12 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onNewAtBat = { viewModel.resetPitchCount() },
         )
         Spacer(modifier = Modifier.weight(1f))
+        UndoRedoRow(
+            canUndo = canUndo,
+            canRedo = canRedo,
+            onUndo = { viewModel.undo() },
+            onRedo = { viewModel.redo() },
+        )
     }
 }
 
@@ -232,6 +246,42 @@ private fun CountCell(label: String, value: Int, enabled: Boolean = true, onClic
             fontWeight = FontWeight.Bold,
             lineHeight = 42.sp,
         )
+    }
+}
+
+@Composable
+private fun UndoRedoRow(canUndo: Boolean, canRedo: Boolean, onUndo: () -> Unit, onRedo: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .height(64.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(CountDark),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val undoColor = if (canUndo) Color.White else Color.White.copy(alpha = 0.35f)
+            val redoColor = if (canRedo) Color.White else Color.White.copy(alpha = 0.35f)
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight()
+                    .then(if (canUndo) Modifier.clickable { onUndo() } else Modifier),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("Undo", color = undoColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Filled.Undo, contentDescription = null, tint = undoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
+            }
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight()
+                    .then(if (canRedo) Modifier.clickable { onRedo() } else Modifier),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("Redo", color = redoColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Filled.Redo, contentDescription = null, tint = redoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
+            }
+        }
     }
 }
 
