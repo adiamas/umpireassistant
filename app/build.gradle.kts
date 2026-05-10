@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+apply(plugin = "org.jetbrains.kotlin.android")
+
 android {
     namespace = "com.adiamas.umpireassistant"
     compileSdk = 35
