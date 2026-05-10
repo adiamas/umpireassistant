@@ -1,7 +1,9 @@
 package com.adiamas.umpireassistant.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -120,7 +122,7 @@ private fun ScoreRow(state: GameState, config: GameConfig, onAddRun: () -> Unit)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp),
+            .height(100.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         TeamScoreBox(
@@ -170,7 +172,14 @@ private fun TeamScoreBox(
                 color = if (isBatting) Color.White else Color.Transparent,
                 fontSize = 20.sp,
             )
-            Text(text = name, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = name,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately),
+            )
             Text(
                 text = "$score",
                 color = Color.White,
@@ -228,7 +237,7 @@ private fun CountRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(110.dp),
+            .height(86.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
@@ -254,7 +263,7 @@ private fun CountRow(
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Out", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Out", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Text("${state.outs}", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
             }
         }
@@ -270,7 +279,7 @@ private fun CountCell(label: String, value: Int, enabled: Boolean = true, onClic
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, color = contentColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = contentColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text(
             text = if (!enabled) "Off" else "$value",
             color = contentColor,
@@ -310,7 +319,7 @@ private fun BottomRow(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("Game Clock", color = clockColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("Game Clock", color = clockColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(
                 text = if (clockEnabled) "%d:%02d".format(timerSeconds / 60, timerSeconds % 60) else "Off",
                 color = clockColor,
@@ -336,7 +345,7 @@ private fun BottomRow(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text("Undo", color = undoColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Undo", color = undoColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = undoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
             }
             Column(
@@ -345,7 +354,7 @@ private fun BottomRow(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text("Redo", color = redoColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Redo", color = redoColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = null, tint = redoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
             }
         }
