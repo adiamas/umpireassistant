@@ -229,6 +229,7 @@ private fun ScoreRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TeamScoreBox(
     name: String,
