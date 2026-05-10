@@ -4,9 +4,8 @@ kotlin = "2.2.10"
 coreKtx = "1.13.1"
 lifecycleRuntimeKtx = "2.8.0"
 activityCompose = "1.9.0"
-composeBom = "2024.04.01"
-navigationCompose = "2.7.7"
-composeCompiler = "1.5.13"
+composeBom = "2024.12.01"
+navigationCompose = "2.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
