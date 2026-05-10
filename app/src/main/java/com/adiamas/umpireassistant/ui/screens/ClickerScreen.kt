@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
 import com.adiamas.umpireassistant.model.Sport
@@ -52,6 +53,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
         ScoreRow(state = state, config = config, onAddRun = { viewModel.addRun() })
         CountRow(
             state = state,
+            config = config,
             onBall = { viewModel.incrementBalls() },
             onStrike = { viewModel.incrementStrikes() },
             onFoul = { viewModel.incrementFouls() },
@@ -171,6 +173,7 @@ private fun InningBox(
 @Composable
 private fun CountRow(
     state: GameState,
+    config: GameConfig,
     onBall: () -> Unit,
     onStrike: () -> Unit,
     onFoul: () -> Unit,
@@ -191,9 +194,9 @@ private fun CountRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CountCell(label = "Ball", value = state.balls, onClick = onBall)
-            CountCell(label = "Strike", value = state.strikes, onClick = onStrike)
-            CountCell(label = "Foul", value = state.fouls, onClick = onFoul)
+            CountCell(label = "Ball", value = state.balls, enabled = config.ballsPerWalk > 0, onClick = onBall)
+            CountCell(label = "Strike", value = state.strikes, enabled = config.strikesPerOut > 0, onClick = onStrike)
+            CountCell(label = "Foul", value = state.fouls, enabled = config.foulMode != FoulMode.NOT_COUNTED, onClick = onFoul)
         }
         Box(
             modifier = Modifier
@@ -213,17 +216,18 @@ private fun CountRow(
 }
 
 @Composable
-private fun CountCell(label: String, value: Int, onClick: () -> Unit) {
+private fun CountCell(label: String, value: Int, enabled: Boolean = true, onClick: () -> Unit) {
+    val contentColor = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
     Column(
         modifier = Modifier
-            .clickable { onClick() }
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = contentColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         Text(
-            text = "$value",
-            color = Color.White,
+            text = if (!enabled) "Off" else "$value",
+            color = contentColor,
             fontSize = 38.sp,
             fontWeight = FontWeight.Bold,
             lineHeight = 42.sp,

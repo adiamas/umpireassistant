@@ -26,8 +26,9 @@ class GameViewModel : ViewModel() {
 
     fun incrementBalls() {
         val config = _config.value
+        if (config.ballsPerWalk == 0) return
         val newBalls = _state.value.balls + 1
-        if (config.ballsPerWalk > 0 && newBalls >= config.ballsPerWalk) {
+        if (newBalls >= config.ballsPerWalk) {
             resetPitchCount()
         } else {
             update { copy(balls = newBalls) }
@@ -36,8 +37,9 @@ class GameViewModel : ViewModel() {
 
     fun incrementStrikes() {
         val config = _config.value
+        if (config.strikesPerOut == 0) return
         val newStrikes = _state.value.strikes + 1
-        if (config.strikesPerOut > 0 && newStrikes >= config.strikesPerOut) {
+        if (newStrikes >= config.strikesPerOut) {
             incrementOuts()
         } else {
             update { copy(strikes = newStrikes) }
@@ -49,11 +51,15 @@ class GameViewModel : ViewModel() {
         val state = _state.value
         when (config.foulMode) {
             FoulMode.NOT_COUNTED -> Unit
-            FoulMode.ALWAYS_STRIKES -> incrementStrikes()
+            FoulMode.ALWAYS_STRIKES -> {
+                update { copy(fouls = fouls + 1) }
+                incrementStrikes()
+            }
             FoulMode.STRIKE_CAP -> {
-                val newFouls = state.fouls + 1
-                update { copy(fouls = newFouls) }
-                if (newFouls <= config.maxFoulCount) incrementStrikes()
+                if (state.fouls < config.maxFoulCount) {
+                    update { copy(fouls = fouls + 1) }
+                    incrementStrikes()
+                }
             }
             FoulMode.INDEPENDENT -> {
                 val newFouls = state.fouls + 1
