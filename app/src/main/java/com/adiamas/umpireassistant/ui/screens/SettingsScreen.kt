@@ -9,7 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import android.content.Intent
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -36,6 +41,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.model.FoulMode
+import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.model.VolumeAction
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
@@ -43,6 +49,8 @@ import com.adiamas.umpireassistant.viewmodel.GameViewModel
 @Composable
 fun SettingsScreen(viewModel: GameViewModel) {
     val config by viewModel.config.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
     var dropdownExpanded by remember { mutableStateOf(false) }
 
@@ -54,6 +62,31 @@ fun SettingsScreen(viewModel: GameViewModel) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Button(
+            onClick = {
+                val date = LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                val text = "$date\n${config.awayTeamName} - ${state.awayScore}\n${config.homeTeamName} - ${state.homeScore}"
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(Intent.createChooser(intent, null))
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+        ) {
+            Text("Share Game Score")
+        }
+
+        Button(
+            onClick = { showResetConfirm = true },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+        ) {
+            Text("Reset Clicker")
+        }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text("Game Settings", style = MaterialTheme.typography.titleMedium)
@@ -159,22 +192,13 @@ fun SettingsScreen(viewModel: GameViewModel) {
             onSelect = { viewModel.updateVolumeDown(it) },
         )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        Button(
-            onClick = { showResetConfirm = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-        ) {
-            Text("Reset Game")
-        }
     }
 
     if (showResetConfirm) {
         AlertDialog(
             onDismissRequest = { showResetConfirm = false },
-            title = { Text("Reset Game") },
-            text = { Text("Reset all scores and counts? Team names and sport will be kept.") },
+            title = { Text("Reset Clicker") },
+            text = { Text("Would you like to start a new game?") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.resetGame()
