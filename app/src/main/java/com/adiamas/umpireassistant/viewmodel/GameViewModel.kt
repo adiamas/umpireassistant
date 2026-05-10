@@ -5,6 +5,7 @@ import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
 import com.adiamas.umpireassistant.model.Sport
+import com.adiamas.umpireassistant.model.VolumeAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -131,6 +132,22 @@ class GameViewModel : ViewModel() {
     }
 
     fun updateFoulsPerOut(value: Int) = updateConfig { copy(foulsPerOut = value.coerceIn(1, 5)) }
+
+    fun updateVolumeUp(action: VolumeAction) = updateConfig { copy(volumeUp = action) }
+    fun updateVolumeDown(action: VolumeAction) = updateConfig { copy(volumeDown = action) }
+
+    fun dispatchVolumeAction(action: VolumeAction): Boolean {
+        when (action) {
+            VolumeAction.OFF -> return false
+            VolumeAction.BALL -> incrementBalls()
+            VolumeAction.STRIKE -> incrementStrikes()
+            VolumeAction.FOUL -> incrementFouls()
+            VolumeAction.OUT -> incrementOuts()
+            VolumeAction.RUN_SCORED -> addRun()
+            VolumeAction.NEW_AT_BAT -> resetPitchCount()
+        }
+        return true
+    }
 
     fun resetGame() {
         _state.value = GameState()

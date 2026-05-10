@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.model.FoulMode
+import com.adiamas.umpireassistant.model.VolumeAction
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,6 +144,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text("Volume Button Assignments", style = MaterialTheme.typography.titleMedium)
+
+        Text("Volume up")
+        VolumeActionDropdown(
+            selected = config.volumeUp,
+            excluded = config.volumeDown.takeIf { it != VolumeAction.OFF },
+            onSelect = { viewModel.updateVolumeUp(it) },
+        )
+        Text("Volume down")
+        VolumeActionDropdown(
+            selected = config.volumeDown,
+            excluded = config.volumeUp.takeIf { it != VolumeAction.OFF },
+            onSelect = { viewModel.updateVolumeDown(it) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         Button(
             onClick = { showResetConfirm = true },
@@ -173,6 +190,45 @@ fun SettingsScreen(viewModel: GameViewModel) {
             },
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VolumeActionDropdown(
+    selected: VolumeAction,
+    excluded: VolumeAction?,
+    onSelect: (VolumeAction) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = selected.label(),
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            VolumeAction.entries.forEach { action ->
+                DropdownMenuItem(
+                    text = { Text(action.label()) },
+                    onClick = { onSelect(action); expanded = false },
+                    enabled = action != excluded,
+                )
+            }
+        }
+    }
+}
+
+private fun VolumeAction.label() = when (this) {
+    VolumeAction.OFF -> "Off"
+    VolumeAction.BALL -> "Ball"
+    VolumeAction.STRIKE -> "Strike"
+    VolumeAction.FOUL -> "Foul"
+    VolumeAction.OUT -> "Out"
+    VolumeAction.RUN_SCORED -> "Run scored"
+    VolumeAction.NEW_AT_BAT -> "New at-bat"
 }
 
 private fun FoulMode.label() = when (this) {
