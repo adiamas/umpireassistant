@@ -262,7 +262,7 @@ private fun TeamScoreBox(
             Text(
                 text = name,
                 color = Color.White,
-                fontSize = 20.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately),
