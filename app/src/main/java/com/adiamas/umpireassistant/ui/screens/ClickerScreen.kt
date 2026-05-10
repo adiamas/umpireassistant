@@ -24,6 +24,11 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -61,7 +66,10 @@ fun ClickerScreen(viewModel: GameViewModel) {
     val canRedo by viewModel.canRedo.collectAsState()
     val timerSeconds by viewModel.timerSeconds.collectAsState()
     val timerRunning by viewModel.timerRunning.collectAsState()
+    val teams by viewModel.teams.collectAsState()
     var showClockResetConfirm by remember { mutableStateOf(false) }
+    var showHomeSelector by remember { mutableStateOf(false) }
+    var showAwaySelector by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -70,7 +78,13 @@ fun ClickerScreen(viewModel: GameViewModel) {
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ScoreRow(state = state, config = config, onAddRun = { viewModel.addRun() })
+        ScoreRow(
+            state = state,
+            config = config,
+            onAddRun = { viewModel.addRun() },
+            onSelectAwayTeam = { showAwaySelector = true },
+            onSelectHomeTeam = { showHomeSelector = true },
+        )
         CountRow(
             state = state,
             config = config,
@@ -115,10 +129,76 @@ fun ClickerScreen(viewModel: GameViewModel) {
             },
         )
     }
+
+    if (showAwaySelector) {
+        TeamSelectorDialog(
+            label = "Away",
+            teams = teams.map { it.name },
+            onDismiss = { showAwaySelector = false },
+            onSelect = { viewModel.selectAwayTeam(it); showAwaySelector = false },
+        )
+    }
+
+    if (showHomeSelector) {
+        TeamSelectorDialog(
+            label = "Home",
+            teams = teams.map { it.name },
+            onDismiss = { showHomeSelector = false },
+            onSelect = { viewModel.selectHomeTeam(it); showHomeSelector = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TeamSelectorDialog(
+    label: String,
+    teams: List<String>,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(teams.firstOrNull() ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select $label team") },
+        text = {
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                OutlinedTextField(
+                    value = selected,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                )
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    teams.forEach { name ->
+                        DropdownMenuItem(
+                            text = { Text(name) },
+                            onClick = { selected = name; expanded = false },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSelect(selected) }, enabled = selected.isNotEmpty()) {
+                Text("Select")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
-private fun ScoreRow(state: GameState, config: GameConfig, onAddRun: () -> Unit) {
+private fun ScoreRow(
+    state: GameState,
+    config: GameConfig,
+    onAddRun: () -> Unit,
+    onSelectAwayTeam: () -> Unit,
+    onSelectHomeTeam: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -130,6 +210,7 @@ private fun ScoreRow(state: GameState, config: GameConfig, onAddRun: () -> Unit)
             score = state.awayScore,
             isBatting = state.isTopHalf,
             onClick = onAddRun,
+            onLongClick = onSelectAwayTeam,
             modifier = Modifier.weight(1f),
         )
         TeamScoreBox(
@@ -137,6 +218,7 @@ private fun ScoreRow(state: GameState, config: GameConfig, onAddRun: () -> Unit)
             score = state.homeScore,
             isBatting = !state.isTopHalf,
             onClick = onAddRun,
+            onLongClick = onSelectHomeTeam,
             modifier = Modifier.weight(1f),
         )
         InningBox(
@@ -153,6 +235,7 @@ private fun TeamScoreBox(
     score: Int,
     isBatting: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -160,7 +243,10 @@ private fun TeamScoreBox(
             .fillMaxHeight()
             .clip(RoundedCornerShape(8.dp))
             .background(if (isBatting) ScoreBlue else ScoreBlueInactive)
-            .then(if (isBatting) Modifier.clickable { onClick() } else Modifier),
+            .combinedClickable(
+                onClick = { if (isBatting) onClick() },
+                onLongClick = onLongClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Column(
