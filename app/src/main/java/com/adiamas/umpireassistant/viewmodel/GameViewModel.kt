@@ -1,7 +1,11 @@
 package com.adiamas.umpireassistant.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.adiamas.umpireassistant.model.FoulMode
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
 import com.adiamas.umpireassistant.model.Sport
@@ -16,6 +20,12 @@ class GameViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(GameState())
     val state: StateFlow<GameState> = _state.asStateFlow()
+
+    private var timerJob: Job? = null
+    private val _timerSeconds = MutableStateFlow(_config.value.gameLengthMinutes * 60)
+    val timerSeconds: StateFlow<Int> = _timerSeconds.asStateFlow()
+    private val _timerRunning = MutableStateFlow(false)
+    val timerRunning: StateFlow<Boolean> = _timerRunning.asStateFlow()
 
     private val _undoStack = mutableListOf<GameState>()
     private val _redoStack = mutableListOf<GameState>()
@@ -155,6 +165,34 @@ class GameViewModel : ViewModel() {
     fun updateVolumeUp(action: VolumeAction) = updateConfig { copy(volumeUp = action) }
     fun updateVolumeDown(action: VolumeAction) = updateConfig { copy(volumeDown = action) }
 
+    fun updateGameLengthMinutes(value: Int) {
+        updateConfig { copy(gameLengthMinutes = value.coerceIn(0, 120)) }
+        if (!_timerRunning.value) _timerSeconds.value = _config.value.gameLengthMinutes * 60
+    }
+
+    fun toggleTimer() {
+        if (_timerRunning.value) {
+            timerJob?.cancel()
+            _timerRunning.value = false
+        } else {
+            if (_timerSeconds.value == 0) _timerSeconds.value = _config.value.gameLengthMinutes * 60
+            _timerRunning.value = true
+            timerJob = viewModelScope.launch {
+                while (_timerSeconds.value > 0) {
+                    delay(1000)
+                    _timerSeconds.value--
+                }
+                _timerRunning.value = false
+            }
+        }
+    }
+
+    fun resetTimer() {
+        timerJob?.cancel()
+        _timerRunning.value = false
+        _timerSeconds.value = _config.value.gameLengthMinutes * 60
+    }
+
     fun dispatchVolumeAction(action: VolumeAction): Boolean {
         when (action) {
             VolumeAction.OFF -> return false
@@ -184,5 +222,8 @@ class GameViewModel : ViewModel() {
         _canRedo.value = _redoStack.isNotEmpty()
     }
 
-    fun resetGame() = action { _state.value = GameState() }
+    fun resetGame() = action {
+        _state.value = GameState()
+        resetTimer()
+    }
 }

@@ -1,7 +1,9 @@
 package com.adiamas.umpireassistant.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -15,15 +17,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Redo
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +57,9 @@ fun ClickerScreen(viewModel: GameViewModel) {
     val config by viewModel.config.collectAsState()
     val canUndo by viewModel.canUndo.collectAsState()
     val canRedo by viewModel.canRedo.collectAsState()
+    val timerSeconds by viewModel.timerSeconds.collectAsState()
+    val timerRunning by viewModel.timerRunning.collectAsState()
+    var showClockResetConfirm by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -74,11 +84,33 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onNewAtBat = { viewModel.resetPitchCount() },
         )
         Spacer(modifier = Modifier.weight(1f))
-        UndoRedoRow(
+        BottomRow(
+            gameLengthMinutes = config.gameLengthMinutes,
+            timerSeconds = timerSeconds,
+            timerRunning = timerRunning,
+            onTimerTap = { viewModel.toggleTimer() },
+            onTimerLongPress = { showClockResetConfirm = true },
             canUndo = canUndo,
             canRedo = canRedo,
             onUndo = { viewModel.undo() },
             onRedo = { viewModel.redo() },
+        )
+    }
+
+    if (showClockResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClockResetConfirm = false },
+            title = { Text("Reset Game Clock") },
+            text = { Text("Would you like to reset the game clock?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetTimer()
+                    showClockResetConfirm = false
+                }) { Text("Reset") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClockResetConfirm = false }) { Text("Cancel") }
+            },
         )
     }
 }
@@ -249,12 +281,47 @@ private fun CountCell(label: String, value: Int, enabled: Boolean = true, onClic
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun UndoRedoRow(canUndo: Boolean, canRedo: Boolean, onUndo: () -> Unit, onRedo: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+private fun BottomRow(
+    gameLengthMinutes: Int,
+    timerSeconds: Int,
+    timerRunning: Boolean,
+    onTimerTap: () -> Unit,
+    onTimerLongPress: () -> Unit,
+    canUndo: Boolean,
+    canRedo: Boolean,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        val clockEnabled = gameLengthMinutes > 0
+        val clockColor = if (clockEnabled) Color.White else Color.White.copy(alpha = 0.35f)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .height(64.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(CountDark)
+                .then(if (clockEnabled) Modifier.combinedClickable(onClick = onTimerTap, onLongClick = onTimerLongPress) else Modifier),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text("Game Clock", color = clockColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = if (clockEnabled) "%d:%02d".format(timerSeconds / 60, timerSeconds % 60) else "Off",
+                color = clockColor,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 32.sp,
+            )
+        }
         Row(
             modifier = Modifier
-                .fillMaxWidth(0.5f)
+                .weight(1f)
                 .height(64.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(CountDark),
@@ -270,7 +337,7 @@ private fun UndoRedoRow(canUndo: Boolean, canRedo: Boolean, onUndo: () -> Unit, 
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text("Undo", color = undoColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Icon(Icons.Filled.Undo, contentDescription = null, tint = undoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
+                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = undoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
             }
             Column(
                 modifier = Modifier.weight(1f).fillMaxHeight()
@@ -279,7 +346,7 @@ private fun UndoRedoRow(canUndo: Boolean, canRedo: Boolean, onUndo: () -> Unit, 
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text("Redo", color = redoColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Icon(Icons.Filled.Redo, contentDescription = null, tint = redoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
+                Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = null, tint = redoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
             }
         }
     }

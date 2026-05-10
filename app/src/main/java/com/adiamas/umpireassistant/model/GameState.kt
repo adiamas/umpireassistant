@@ -19,6 +19,7 @@ data class GameConfig(
     val foulsPerOut: Int = 3,
     val volumeUp: VolumeAction = VolumeAction.OFF,
     val volumeDown: VolumeAction = VolumeAction.OFF,
+    val gameLengthMinutes: Int = 45,
 )
 
 data class GameState(
