@@ -18,4 +18,5 @@ data class TeamEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(index = true) val configId: Int,
     val name: String,
+    val color: Int? = null,
 )

@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [StoredConfigEntity::class, TeamEntity::class, AppSessionEntity::class],
-    version = 1,
+    version = 2,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun storedConfigDao(): StoredConfigDao
@@ -20,6 +20,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "umpire_assistant.db")
+                    .fallbackToDestructiveMigration(true)
                     .build()
                     .also { INSTANCE = it }
             }
