@@ -1,12 +1,14 @@
 package com.adiamas.umpireassistant.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -16,13 +18,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,11 +85,7 @@ fun TeamsScreen(viewModel: GameViewModel) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = { editTarget = team },
-                            onLongClick = { deleteTarget = team },
-                        )
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -91,14 +94,31 @@ fun TeamsScreen(viewModel: GameViewModel) {
                         fontSize = 22.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(team.name, fontSize = 22.sp, modifier = Modifier.weight(1f))
-                    team.color?.let { colorInt ->
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(Color(colorInt))
+                    val swatchColor = team.color?.let { Color(it) } ?: AppBackground
+                    val textColor = if (swatchColor.luminance() > 0.5f) Color.Black else Color.White
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(swatchColor),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            text = team.name,
+                            fontSize = 18.sp,
+                            color = textColor,
+                            maxLines = 1,
+                            modifier = Modifier.padding(start = 16.dp).basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
                         )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+                        IconButton(onClick = { editTarget = team }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit team")
+                        }
+                        IconButton(onClick = { deleteTarget = team }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete team")
+                        }
                     }
                 }
                 if (index < teams.lastIndex) HorizontalDivider(color = Color.DarkGray)
@@ -116,7 +136,7 @@ fun TeamsScreen(viewModel: GameViewModel) {
     if (showAddDialog) {
         AddTeamDialog(
             onDismiss = { showAddDialog = false },
-            onAdd = { name -> viewModel.addTeam(name); showAddDialog = false },
+            onAdd = { name, color -> viewModel.addTeam(name, color); showAddDialog = false },
         )
     }
 
@@ -138,8 +158,9 @@ fun TeamsScreen(viewModel: GameViewModel) {
 }
 
 @Composable
-private fun AddTeamDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
+private fun AddTeamDialog(onDismiss: () -> Unit, onAdd: (String, Int?) -> Unit) {
     var name by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf<Color?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Team") },
@@ -152,11 +173,16 @@ private fun AddTeamDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
                     label = { Text("Team name") },
                     singleLine = true,
                 )
+                Text("Team color", style = MaterialTheme.typography.bodyMedium)
+                TeamColorPicker(
+                    selected = selectedColor,
+                    onSelect = { selectedColor = it },
+                )
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { if (name.isNotBlank()) onAdd(name.trim()) },
+                onClick = { if (name.isNotBlank()) onAdd(name.trim(), selectedColor?.toArgb()) },
                 enabled = name.isNotBlank(),
             ) { Text("Add") }
         },

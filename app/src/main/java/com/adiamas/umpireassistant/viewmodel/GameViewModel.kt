@@ -336,9 +336,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── team management ───────────────────────────────────────────────────────
 
-    fun addTeam(name: String) {
+    fun addTeam(name: String, color: Int? = null) {
         if (_activeConfigId.value == 0) return
-        viewModelScope.launch { repo.addTeam(TeamEntity(configId = _activeConfigId.value, name = name)) }
+        viewModelScope.launch { repo.addTeam(TeamEntity(configId = _activeConfigId.value, name = name, color = color)) }
     }
 
     fun updateTeam(team: TeamEntity) { viewModelScope.launch { repo.updateTeam(team) } }
