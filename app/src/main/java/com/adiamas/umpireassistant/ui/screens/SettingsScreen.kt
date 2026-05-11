@@ -126,6 +126,14 @@ fun SettingsScreen(viewModel: GameViewModel) {
                         },
                     )
                 }
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("New Settings") },
+                    onClick = {
+                        configDropdownExpanded = false
+                        showSaveConfigDialog = true
+                    },
+                )
             }
         }
         Row(
