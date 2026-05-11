@@ -1,8 +1,10 @@
 package com.adiamas.umpireassistant.ui.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -92,68 +94,78 @@ fun SettingsScreen(viewModel: GameViewModel) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
-        AnimatedVisibility(visible = showSaveMessage, enter = fadeIn(), exit = fadeOut()) {
-            OutlinedCard(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = ActionGreen)
-                    Text(
-                        "Settings have been saved.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = ActionGreen,
-                    )
-                }
-            }
-        }
         Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
-        ExposedDropdownMenuBox(
-            expanded = configDropdownExpanded,
-            onExpandedChange = { configDropdownExpanded = it },
-        ) {
-            OutlinedTextField(
-                value = activeConfig?.name ?: "",
-                onValueChange = {},
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = configDropdownExpanded) },
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
-            )
-            ExposedDropdownMenu(
-                expanded = configDropdownExpanded,
-                onDismissRequest = { configDropdownExpanded = false },
-            ) {
-                storedConfigs.forEach { sc ->
-                    DropdownMenuItem(
-                        text = { Text(sc.name) },
-                        onClick = {
-                            configDropdownExpanded = false
-                            if (hasChanges) pendingConfigId = sc.id
-                            else viewModel.switchConfig(sc.id)
-                        },
-                    )
+        AnimatedContent(
+            targetState = showSaveMessage,
+            modifier = Modifier.fillMaxWidth(),
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "StoredSettingsArea",
+        ) { isSaved ->
+            if (isSaved) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = ActionGreen)
+                        Text(
+                            "Settings have been saved.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ActionGreen,
+                        )
+                    }
                 }
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("New Settings") },
-                    onClick = {
-                        configDropdownExpanded = false
-                        showSaveConfigDialog = true
-                    },
-                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ExposedDropdownMenuBox(
+                        expanded = configDropdownExpanded,
+                        onExpandedChange = { configDropdownExpanded = it },
+                    ) {
+                        OutlinedTextField(
+                            value = activeConfig?.name ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = configDropdownExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = configDropdownExpanded,
+                            onDismissRequest = { configDropdownExpanded = false },
+                        ) {
+                            storedConfigs.forEach { sc ->
+                                DropdownMenuItem(
+                                    text = { Text(sc.name) },
+                                    onClick = {
+                                        configDropdownExpanded = false
+                                        if (hasChanges) pendingConfigId = sc.id
+                                        else viewModel.switchConfig(sc.id)
+                                    },
+                                )
+                            }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("New Settings") },
+                                onClick = {
+                                    configDropdownExpanded = false
+                                    showSaveConfigDialog = true
+                                },
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.saveCurrentConfig(activeConfig!!.name)
+                            showSaveMessage = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = isDirty && activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
+                        colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+                    ) { Text("Save Settings") }
+                }
             }
         }
-        Button(
-            onClick = {
-                viewModel.saveCurrentConfig(activeConfig!!.name)
-                showSaveMessage = true
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = isDirty && activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
-            colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
-        ) { Text("Save Settings") }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Game Status", style = MaterialTheme.typography.titleMedium)
