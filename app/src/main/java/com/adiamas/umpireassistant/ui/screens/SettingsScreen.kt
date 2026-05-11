@@ -136,25 +136,15 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 )
             }
         }
-        Row(
+        Button(
+            onClick = {
+                viewModel.saveCurrentConfig(activeConfig!!.name)
+                showSaveMessage = true
+            },
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Button(
-                onClick = {
-                    viewModel.saveCurrentConfig(activeConfig!!.name)
-                    showSaveMessage = true
-                },
-                modifier = Modifier.weight(1f),
-                enabled = activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
-                colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
-            ) { Text("Save Settings") }
-            Button(
-                onClick = { showSaveConfigDialog = true },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
-            ) { Text("New Settings") }
-        }
+            enabled = activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
+            colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+        ) { Text("Save Settings") }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         OutlinedCard(modifier = Modifier.fillMaxWidth()) {
