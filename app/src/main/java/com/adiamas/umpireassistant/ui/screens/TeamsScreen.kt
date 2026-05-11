@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.data.TeamEntity
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.ui.theme.AppBackground
@@ -86,10 +87,10 @@ fun TeamsScreen(viewModel: GameViewModel) {
                 ) {
                     Text(
                         text = "${index + 1}.",
-                        style = MaterialTheme.typography.titleLarge,
+                        fontSize = 22.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(team.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    Text(team.name, fontSize = 22.sp, modifier = Modifier.weight(1f))
                     team.color?.let { colorInt ->
                         Box(
                             modifier = Modifier
