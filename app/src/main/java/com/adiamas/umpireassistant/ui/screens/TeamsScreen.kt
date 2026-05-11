@@ -68,6 +68,7 @@ fun TeamsScreen(viewModel: GameViewModel) {
             .padding(16.dp),
     ) {
         Text("Teams", style = MaterialTheme.typography.headlineMedium)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
 
         LazyColumn(
             modifier = Modifier.weight(1f).padding(top = 12.dp),

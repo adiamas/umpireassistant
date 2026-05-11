@@ -66,6 +66,8 @@ fun SettingsScreen(viewModel: GameViewModel) {
     var showResetConfirm by remember { mutableStateOf(false) }
     var showSaveConfigDialog by remember { mutableStateOf(false) }
     var configDropdownExpanded by remember { mutableStateOf(false) }
+    var pendingConfigId by remember { mutableStateOf<Int?>(null) }
+    val hasChanges = isDirty || state.homeScore > 0 || state.awayScore > 0 || state.inning > 1
     var dropdownExpanded by remember { mutableStateOf(false) }
     val activeConfig = storedConfigs.find { it.id == activeConfigId }
 
@@ -100,7 +102,11 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 storedConfigs.forEach { sc ->
                     DropdownMenuItem(
                         text = { Text(sc.name) },
-                        onClick = { viewModel.switchConfig(sc.id); configDropdownExpanded = false },
+                        onClick = {
+                            configDropdownExpanded = false
+                            if (hasChanges) pendingConfigId = sc.id
+                            else viewModel.switchConfig(sc.id)
+                        },
                     )
                 }
             }
@@ -267,6 +273,20 @@ fun SettingsScreen(viewModel: GameViewModel) {
             onSelect = { viewModel.updateVolumeDown(it) },
         )
 
+    }
+
+    pendingConfigId?.let { configId ->
+        AlertDialog(
+            onDismissRequest = { pendingConfigId = null },
+            title = { Text("Switch Settings") },
+            text = { Text("Selecting a stored setting will reset any clicker, teams, or settings changes.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.switchConfig(configId); pendingConfigId = null }) {
+                    Text("Switch")
+                }
+            },
+            dismissButton = { TextButton(onClick = { pendingConfigId = null }) { Text("Cancel") } },
+        )
     }
 
     if (showResetConfirm) {
