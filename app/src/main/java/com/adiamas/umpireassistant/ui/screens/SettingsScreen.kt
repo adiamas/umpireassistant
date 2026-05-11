@@ -1,5 +1,8 @@
 package com.adiamas.umpireassistant.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,11 +37,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
@@ -65,7 +70,10 @@ fun SettingsScreen(viewModel: GameViewModel) {
     val context = LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
     var showSaveConfigDialog by remember { mutableStateOf(false) }
-    var showSaveConfirmation by remember { mutableStateOf(false) }
+    var showSaveMessage by remember { mutableStateOf(false) }
+    LaunchedEffect(showSaveMessage) {
+        if (showSaveMessage) { delay(3000); showSaveMessage = false }
+    }
     var configDropdownExpanded by remember { mutableStateOf(false) }
     var pendingConfigId by remember { mutableStateOf<Int?>(null) }
     val hasChanges = isDirty || state.homeScore > 0 || state.awayScore > 0 || state.inning > 1
@@ -83,6 +91,14 @@ fun SettingsScreen(viewModel: GameViewModel) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        AnimatedVisibility(visible = showSaveMessage, enter = fadeIn(), exit = fadeOut()) {
+            Text(
+                "Settings have been saved.",
+                color = ActionGreen,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+        }
         Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
         ExposedDropdownMenuBox(
             expanded = configDropdownExpanded,
@@ -119,7 +135,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             Button(
                 onClick = {
                     viewModel.saveCurrentConfig(activeConfig!!.name)
-                    showSaveConfirmation = true
+                    showSaveMessage = true
                 },
                 modifier = Modifier.weight(1f),
                 enabled = activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
@@ -319,17 +335,6 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 TextButton(onClick = { showResetConfirm = false }) {
                     Text("Cancel")
                 }
-            },
-        )
-    }
-
-    if (showSaveConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showSaveConfirmation = false },
-            title = { Text("Settings Saved") },
-            text = { Text("Configuration \"${activeConfig?.name}\" has been saved.") },
-            confirmButton = {
-                TextButton(onClick = { showSaveConfirmation = false }) { Text("OK") }
             },
         )
     }
