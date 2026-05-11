@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.OutlinedTextField
@@ -92,12 +93,20 @@ fun SettingsScreen(viewModel: GameViewModel) {
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         AnimatedVisibility(visible = showSaveMessage, enter = fadeIn(), exit = fadeOut()) {
-            Text(
-                "Settings have been saved.",
-                color = ActionGreen,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 4.dp),
-            )
+            OutlinedCard(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = ActionGreen)
+                    Text(
+                        "Settings have been saved.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ActionGreen,
+                    )
+                }
+            }
         }
         Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
         ExposedDropdownMenuBox(
