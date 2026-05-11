@@ -142,7 +142,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 showSaveMessage = true
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
+            enabled = isDirty && activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
             colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
         ) { Text("Save Settings") }
 
