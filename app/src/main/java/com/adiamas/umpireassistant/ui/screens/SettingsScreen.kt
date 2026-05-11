@@ -1,5 +1,11 @@
 package com.adiamas.umpireassistant.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,17 +33,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
@@ -46,8 +55,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adiamas.umpireassistant.data.StoredConfigEntity
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
+import com.adiamas.umpireassistant.ui.theme.AppBackground
 import com.adiamas.umpireassistant.model.VolumeAction
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
@@ -56,36 +67,107 @@ import com.adiamas.umpireassistant.viewmodel.GameViewModel
 fun SettingsScreen(viewModel: GameViewModel) {
     val config by viewModel.config.collectAsState()
     val state by viewModel.state.collectAsState()
+    val storedConfigs by viewModel.storedConfigs.collectAsState()
+    val activeConfigId by viewModel.activeConfigId.collectAsState()
+    val isDirty by viewModel.isDirty.collectAsState()
     val context = LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
+    var showSaveConfigDialog by remember { mutableStateOf(false) }
+    var showSaveMessage by remember { mutableStateOf(false) }
+    LaunchedEffect(showSaveMessage) {
+        if (showSaveMessage) { delay(3000); showSaveMessage = false }
+    }
+    var configDropdownExpanded by remember { mutableStateOf(false) }
+    var pendingConfigId by remember { mutableStateOf<Int?>(null) }
+    val hasChanges = isDirty || state.homeScore > 0 || state.awayScore > 0 || state.inning > 1
     var dropdownExpanded by remember { mutableStateOf(false) }
+    val activeConfig = storedConfigs.find { it.id == activeConfigId }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(AppBackground)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Color(0xFFFFB300))
-                Text(
-                    "Set any option to Off to disable it in game view.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
+        AnimatedContent(
+            targetState = showSaveMessage,
+            modifier = Modifier.fillMaxWidth(),
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "StoredSettingsArea",
+        ) { isSaved ->
+            if (isSaved) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = ActionGreen)
+                        Text(
+                            "Settings have been saved.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ActionGreen,
+                        )
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ExposedDropdownMenuBox(
+                        expanded = configDropdownExpanded,
+                        onExpandedChange = { configDropdownExpanded = it },
+                    ) {
+                        OutlinedTextField(
+                            value = activeConfig?.name ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = configDropdownExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = configDropdownExpanded,
+                            onDismissRequest = { configDropdownExpanded = false },
+                        ) {
+                            storedConfigs.forEach { sc ->
+                                DropdownMenuItem(
+                                    text = { Text(sc.name) },
+                                    onClick = {
+                                        configDropdownExpanded = false
+                                        if (hasChanges) pendingConfigId = sc.id
+                                        else viewModel.switchConfig(sc.id)
+                                    },
+                                )
+                            }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("New Settings") },
+                                onClick = {
+                                    configDropdownExpanded = false
+                                    showSaveConfigDialog = true
+                                },
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.saveCurrentConfig(activeConfig!!.name)
+                            showSaveMessage = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = isDirty && activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
+                        colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+                    ) { Text("Save Settings") }
+                }
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Game Status", style = MaterialTheme.typography.titleMedium)
 
         Row(
@@ -116,7 +198,21 @@ fun SettingsScreen(viewModel: GameViewModel) {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Color(0xFFFFB300))
+                Text(
+                    "Set any option to Off to disable it in game view.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Text("Game Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
@@ -134,7 +230,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             showOffAtZero = true,
         )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Pitch Count Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
@@ -207,7 +303,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Volume Button Assignments", style = MaterialTheme.typography.titleMedium)
 
         Text("Volume up")
@@ -223,6 +319,20 @@ fun SettingsScreen(viewModel: GameViewModel) {
             onSelect = { viewModel.updateVolumeDown(it) },
         )
 
+    }
+
+    pendingConfigId?.let { configId ->
+        AlertDialog(
+            onDismissRequest = { pendingConfigId = null },
+            title = { Text("Switch Settings") },
+            text = { Text("Selecting a stored setting will reset any clicker, teams, or settings changes.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.switchConfig(configId); pendingConfigId = null }) {
+                    Text("Switch")
+                }
+            },
+            dismissButton = { TextButton(onClick = { pendingConfigId = null }) { Text("Cancel") } },
+        )
     }
 
     if (showResetConfirm) {
@@ -245,6 +355,58 @@ fun SettingsScreen(viewModel: GameViewModel) {
             },
         )
     }
+
+    if (showSaveConfigDialog) {
+        SaveConfigDialog(
+            onDismiss = { showSaveConfigDialog = false },
+            onSave = { name ->
+                viewModel.saveCurrentConfig(name)
+                showSaveConfigDialog = false
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SaveConfigDialog(
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var showDefaultWarning by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Settings") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it; showDefaultWarning = false },
+                    label = { Text("Configuration name") },
+                    singleLine = true,
+                )
+                if (showDefaultWarning) {
+                    Text(
+                        "Cannot overwrite Default settings.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (name.trim().equals("Default", ignoreCase = true)) {
+                    showDefaultWarning = true
+                } else {
+                    onSave(name.trim())
+                }
+            }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
