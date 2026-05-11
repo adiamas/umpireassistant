@@ -84,7 +84,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _activeConfigId.value = storedConfig.id
         _config.value = storedConfig.toGameConfig(
             homeTeamName = session?.homeTeamName ?: "Home",
+            homeTeamColor = session?.homeTeamColor,
             awayTeamName = session?.awayTeamName ?: "Away",
+            awayTeamColor = session?.awayTeamColor,
         )
         if (session != null) {
             _state.value = GameState(
@@ -152,7 +154,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         repo.saveSession(AppSessionEntity(
             activeConfigId = _activeConfigId.value,
             homeTeamName = c.homeTeamName,
+            homeTeamColor = c.homeTeamColor,
             awayTeamName = c.awayTeamName,
+            awayTeamColor = c.awayTeamColor,
             homeScore = s.homeScore,
             awayScore = s.awayScore,
             inning = s.inning,
@@ -230,13 +234,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── team names (session state, not config dirty) ──────────────────────────
 
-    fun selectHomeTeam(name: String) {
-        _config.value = _config.value.copy(homeTeamName = name)
+    fun selectHomeTeam(name: String, color: Int?) {
+        _config.value = _config.value.copy(homeTeamName = name, homeTeamColor = color)
         scheduleSessionSave()
     }
 
-    fun selectAwayTeam(name: String) {
-        _config.value = _config.value.copy(awayTeamName = name)
+    fun selectAwayTeam(name: String, color: Int?) {
+        _config.value = _config.value.copy(awayTeamName = name, awayTeamColor = color)
         scheduleSessionSave()
     }
 
@@ -427,9 +431,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
 // ── mapping helpers ───────────────────────────────────────────────────────────
 
-private fun StoredConfigEntity.toGameConfig(homeTeamName: String, awayTeamName: String) = GameConfig(
+private fun StoredConfigEntity.toGameConfig(homeTeamName: String, homeTeamColor: Int? = null, awayTeamName: String, awayTeamColor: Int? = null) = GameConfig(
     homeTeamName = homeTeamName,
+    homeTeamColor = homeTeamColor,
     awayTeamName = awayTeamName,
+    awayTeamColor = awayTeamColor,
     sport = Sport.valueOf(sport),
     strikesPerOut = strikesPerOut,
     ballsPerWalk = ballsPerWalk,

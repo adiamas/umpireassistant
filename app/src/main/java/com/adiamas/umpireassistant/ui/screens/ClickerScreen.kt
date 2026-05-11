@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -150,18 +151,18 @@ fun ClickerScreen(viewModel: GameViewModel) {
     if (showAwaySelector) {
         TeamSelectorDialog(
             label = "Away",
-            teams = teams.map { it.name },
+            teams = teams,
             onDismiss = { showAwaySelector = false },
-            onSelect = { viewModel.selectAwayTeam(it); showAwaySelector = false },
+            onSelect = { name, color -> viewModel.selectAwayTeam(name, color); showAwaySelector = false },
         )
     }
 
     if (showHomeSelector) {
         TeamSelectorDialog(
             label = "Home",
-            teams = teams.map { it.name },
+            teams = teams,
             onDismiss = { showHomeSelector = false },
-            onSelect = { viewModel.selectHomeTeam(it); showHomeSelector = false },
+            onSelect = { name, color -> viewModel.selectHomeTeam(name, color); showHomeSelector = false },
         )
     }
 }
@@ -170,19 +171,19 @@ fun ClickerScreen(viewModel: GameViewModel) {
 @Composable
 private fun TeamSelectorDialog(
     label: String,
-    teams: List<String>,
+    teams: List<com.adiamas.umpireassistant.data.TeamEntity>,
     onDismiss: () -> Unit,
-    onSelect: (String) -> Unit,
+    onSelect: (String, Int?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var selected by remember { mutableStateOf(teams.firstOrNull() ?: "") }
+    var selected by remember { mutableStateOf(teams.firstOrNull()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select $label team") },
         text = {
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                 OutlinedTextField(
-                    value = selected,
+                    value = selected?.name ?: "",
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -190,17 +191,17 @@ private fun TeamSelectorDialog(
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    teams.forEach { name ->
+                    teams.forEach { team ->
                         DropdownMenuItem(
-                            text = { Text(name) },
-                            onClick = { selected = name; expanded = false },
+                            text = { Text(team.name) },
+                            onClick = { selected = team; expanded = false },
                         )
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSelect(selected) }, enabled = selected.isNotEmpty()) {
+            TextButton(onClick = { selected?.let { onSelect(it.name, it.color) } }, enabled = selected != null) {
                 Text("Select")
             }
         },
@@ -224,6 +225,7 @@ private fun ScoreRow(
     ) {
         TeamScoreBox(
             name = config.awayTeamName,
+            teamColor = config.awayTeamColor,
             score = state.awayScore,
             isBatting = state.isTopHalf,
             onClick = onAddRun,
@@ -232,6 +234,7 @@ private fun ScoreRow(
         )
         TeamScoreBox(
             name = config.homeTeamName,
+            teamColor = config.homeTeamColor,
             score = state.homeScore,
             isBatting = !state.isTopHalf,
             onClick = onAddRun,
@@ -250,6 +253,7 @@ private fun ScoreRow(
 @Composable
 private fun TeamScoreBox(
     name: String,
+    teamColor: Int?,
     score: Int,
     isBatting: Boolean,
     onClick: () -> Unit,
@@ -271,19 +275,41 @@ private fun TeamScoreBox(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 12.dp),
         ) {
-            Text(
-                text = name,
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
-            )
+            if (teamColor != null) {
+                val ovalColor = Color(teamColor)
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth()
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(ovalColor),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Text(
+                        text = name,
+                        color = if (ovalColor.luminance() > 0.5f) Color.Black else Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 12.dp).basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
+                    )
+                }
+            } else {
+                Text(
+                    text = name,
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.padding(horizontal = 12.dp).basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
+                )
+            }
             Text(
                 text = "$score",
                 color = Color.White,
+                modifier = Modifier.padding(horizontal = 12.dp),
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Bold,
                 lineHeight = 56.sp,
