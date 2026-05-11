@@ -3,6 +3,7 @@ package com.adiamas.umpireassistant.ui.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -21,9 +22,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -31,6 +34,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -70,7 +74,9 @@ fun ClickerScreen(viewModel: GameViewModel) {
     var showClockResetConfirm by remember { mutableStateOf(false) }
     var showHomeSelector by remember { mutableStateOf(false) }
     var showAwaySelector by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -112,6 +118,17 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onRedo = { viewModel.redo() },
         )
     }
+
+    Box(modifier = Modifier.align(Alignment.TopEnd)) {
+        IconButton(onClick = { showMenu = true }) {
+            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
+        }
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(text = { Text("Share Game Score") }, onClick = { showMenu = false })
+            DropdownMenuItem(text = { Text("Reset Clicker") }, onClick = { showMenu = false })
+        }
+    }
+    } // end outer Box
 
     if (showClockResetConfirm) {
         AlertDialog(
@@ -242,6 +259,7 @@ private fun TeamScoreBox(
     Box(
         modifier = modifier
             .fillMaxHeight()
+            .then(if (isBatting) Modifier.border(3.dp, Color(0xFF0D47A1), RoundedCornerShape(8.dp)) else Modifier)
             .clip(RoundedCornerShape(8.dp))
             .background(if (isBatting) ScoreBlue else ScoreBlueInactive)
             .combinedClickable(
@@ -253,19 +271,15 @@ private fun TeamScoreBox(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 12.dp),
         ) {
-            Text(
-                text = "▼",
-                color = if (isBatting) Color.White else Color.Transparent,
-                fontSize = 20.sp,
-            )
             Text(
                 text = name,
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately),
+                modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
             )
             Text(
                 text = "$score",
