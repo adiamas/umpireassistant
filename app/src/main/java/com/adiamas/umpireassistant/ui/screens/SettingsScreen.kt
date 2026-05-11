@@ -156,22 +156,6 @@ fun SettingsScreen(viewModel: GameViewModel) {
         ) { Text("Save Settings") }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Color(0xFFFFB300))
-                Text(
-                    "Set any option to Off to disable it in game view.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Game Status", style = MaterialTheme.typography.titleMedium)
 
         Row(
@@ -203,6 +187,20 @@ fun SettingsScreen(viewModel: GameViewModel) {
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Color(0xFFFFB300))
+                Text(
+                    "Set any option to Off to disable it in game view.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Text("Game Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
