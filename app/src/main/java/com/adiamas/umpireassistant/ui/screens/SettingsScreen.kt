@@ -65,6 +65,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
     val context = LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
     var showSaveConfigDialog by remember { mutableStateOf(false) }
+    var showSaveConfirmation by remember { mutableStateOf(false) }
     var configDropdownExpanded by remember { mutableStateOf(false) }
     var pendingConfigId by remember { mutableStateOf<Int?>(null) }
     val hasChanges = isDirty || state.homeScore > 0 || state.awayScore > 0 || state.inning > 1
@@ -111,12 +112,24 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 }
             }
         }
-        if (isDirty) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Button(
-                onClick = { showSaveConfigDialog = true },
-                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    viewModel.saveCurrentConfig(activeConfig!!.name)
+                    showSaveConfirmation = true
+                },
+                modifier = Modifier.weight(1f),
+                enabled = activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
                 colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
             ) { Text("Save Settings") }
+            Button(
+                onClick = { showSaveConfigDialog = true },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+            ) { Text("New Settings") }
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
@@ -310,9 +323,19 @@ fun SettingsScreen(viewModel: GameViewModel) {
         )
     }
 
+    if (showSaveConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showSaveConfirmation = false },
+            title = { Text("Settings Saved") },
+            text = { Text("Configuration \"${activeConfig?.name}\" has been saved.") },
+            confirmButton = {
+                TextButton(onClick = { showSaveConfirmation = false }) { Text("OK") }
+            },
+        )
+    }
+
     if (showSaveConfigDialog) {
         SaveConfigDialog(
-            currentName = activeConfig?.name ?: "",
             onDismiss = { showSaveConfigDialog = false },
             onSave = { name ->
                 viewModel.saveCurrentConfig(name)
@@ -325,16 +348,15 @@ fun SettingsScreen(viewModel: GameViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SaveConfigDialog(
-    currentName: String,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
 ) {
-    var name by remember { mutableStateOf(currentName) }
+    var name by remember { mutableStateOf("") }
     var showDefaultWarning by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Save Settings") },
+        title = { Text("Add Settings") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
