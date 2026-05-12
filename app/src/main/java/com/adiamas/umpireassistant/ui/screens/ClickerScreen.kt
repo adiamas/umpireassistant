@@ -263,33 +263,32 @@ private fun TeamScoreBox(
     Box(
         modifier = modifier
             .fillMaxHeight()
+            .graphicsLayer { alpha = if (isBatting) 1f else 0.5f }
             .then(if (isBatting) Modifier.border(3.dp, Color(0xFF0D47A1), RoundedCornerShape(8.dp)) else Modifier)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isBatting) ScoreBlue else ScoreBlueInactive)
+            .background(ScoreBlue)
             .combinedClickable(
                 onClick = { if (isBatting) onClick() },
                 onLongClick = onLongClick,
             ),
-        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
         ) {
             if (teamColor != null) {
-                val ovalColor = Color(teamColor)
+                val rectColor = Color(teamColor)
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 8.dp)
                         .fillMaxWidth()
                         .height(32.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(ovalColor),
-                    contentAlignment = Alignment.CenterStart,
+                        .background(rectColor),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = name,
-                        color = if (ovalColor.luminance() > 0.5f) Color.Black else Color.White,
+                        color = if (rectColor.luminance() > 0.5f) Color.Black else Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -303,7 +302,7 @@ private fun TeamScoreBox(
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    modifier = Modifier.padding(horizontal = 12.dp).basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
+                    modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
                 )
             }
             Text(
