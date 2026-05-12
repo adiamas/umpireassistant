@@ -283,17 +283,18 @@ private fun TeamScoreBox(
             modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
         ) {
             if (teamColor != null) {
-                val rectColor = Color(teamColor)
+                val pillColor = Color(teamColor)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(32.dp)
-                        .background(rectColor),
+                        .clip(RoundedCornerShape(50))
+                        .background(pillColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = name,
-                        color = if (rectColor.luminance() > 0.5f) Color.Black else Color.White,
+                        color = if (pillColor.luminance() > 0.5f) Color.Black else Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
