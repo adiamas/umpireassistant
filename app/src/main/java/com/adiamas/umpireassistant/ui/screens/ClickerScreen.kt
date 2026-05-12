@@ -287,7 +287,7 @@ private fun TeamScoreBox(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
+                        .padding(horizontal = 4.dp)
                         .height(32.dp)
                         .clip(RoundedCornerShape(50))
                         .background(pillColor),
