@@ -22,6 +22,7 @@ data class GameConfig(
     val volumeUp: VolumeAction = VolumeAction.OFF,
     val volumeDown: VolumeAction = VolumeAction.OFF,
     val gameLengthMinutes: Int = 45,
+    val scrollTeamNames: Boolean = true,
 )
 
 data class GameState(

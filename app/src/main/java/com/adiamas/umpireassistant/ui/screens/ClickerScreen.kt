@@ -88,6 +88,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
         ScoreRow(
             state = state,
             config = config,
+            scrollTeamNames = config.scrollTeamNames,
             onAddRun = { viewModel.addRun() },
             onSelectAwayTeam = { showAwaySelector = true },
             onSelectHomeTeam = { showHomeSelector = true },
@@ -213,6 +214,7 @@ private fun TeamSelectorDialog(
 private fun ScoreRow(
     state: GameState,
     config: GameConfig,
+    scrollTeamNames: Boolean,
     onAddRun: () -> Unit,
     onSelectAwayTeam: () -> Unit,
     onSelectHomeTeam: () -> Unit,
@@ -228,6 +230,7 @@ private fun ScoreRow(
             teamColor = config.awayTeamColor,
             score = state.awayScore,
             isBatting = state.isTopHalf,
+            scrollName = scrollTeamNames,
             onClick = onAddRun,
             onLongClick = onSelectAwayTeam,
             modifier = Modifier.weight(1f),
@@ -237,6 +240,7 @@ private fun ScoreRow(
             teamColor = config.homeTeamColor,
             score = state.homeScore,
             isBatting = !state.isTopHalf,
+            scrollName = scrollTeamNames,
             onClick = onAddRun,
             onLongClick = onSelectHomeTeam,
             modifier = Modifier.weight(1f),
@@ -256,6 +260,7 @@ private fun TeamScoreBox(
     teamColor: Int?,
     score: Int,
     isBatting: Boolean,
+    scrollName: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -292,7 +297,8 @@ private fun TeamScoreBox(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 12.dp).basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                            .then(if (scrollName) Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400) else Modifier),
                     )
                 }
             } else {
@@ -302,7 +308,7 @@ private fun TeamScoreBox(
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400),
+                    modifier = if (scrollName) Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400) else Modifier,
                 )
             }
             Text(

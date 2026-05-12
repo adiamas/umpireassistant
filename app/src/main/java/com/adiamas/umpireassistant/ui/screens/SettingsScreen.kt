@@ -230,6 +230,12 @@ fun SettingsScreen(viewModel: GameViewModel) {
             showOffAtZero = true,
         )
 
+        ToggleStepperRow(
+            label = "Scroll team names",
+            value = config.scrollTeamNames,
+            onToggle = { viewModel.updateScrollTeamNames(it) },
+        )
+
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Pitch Count Settings", style = MaterialTheme.typography.titleMedium)
 
@@ -453,6 +459,32 @@ private fun FoulMode.label() = when (this) {
     FoulMode.ALWAYS_STRIKES -> "Strikes"
     FoulMode.STRIKE_CAP -> "Strikes, no foul out"
     FoulMode.INDEPENDENT -> "Fouls"
+}
+
+@Composable
+private fun ToggleStepperRow(label: String, value: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, modifier = Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onToggle(false) }, enabled = value) {
+                Text("−", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+            Text(
+                text = if (value) "On" else "Off",
+                modifier = Modifier.width(32.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            IconButton(onClick = { onToggle(true) }, enabled = !value) {
+                Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
 }
 
 @Composable
