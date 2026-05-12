@@ -76,7 +76,17 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _activeConfigId.flatMapLatest { id ->
                 if (id > 0) repo.getTeamsForConfig(id) else flowOf(emptyList())
-            }.collect { _teams.value = it }
+            }.collect { teams ->
+                _teams.value = teams
+                val home = teams.find { it.name == _config.value.homeTeamName }
+                val away = teams.find { it.name == _config.value.awayTeamName }
+                if (home != null || away != null) {
+                    _config.value = _config.value.copy(
+                        homeTeamColor = home?.color ?: _config.value.homeTeamColor,
+                        awayTeamColor = away?.color ?: _config.value.awayTeamColor,
+                    )
+                }
+            }
         }
     }
 
