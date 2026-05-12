@@ -280,7 +280,7 @@ private fun TeamScoreBox(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
             if (teamColor != null) {
                 val pillColor = Color(teamColor)
@@ -309,7 +309,8 @@ private fun TeamScoreBox(
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    modifier = if (scrollName) Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400) else Modifier,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                        .then(if (scrollName) Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400) else Modifier),
                 )
             }
             Text(
