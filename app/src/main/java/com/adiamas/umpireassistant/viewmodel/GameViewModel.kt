@@ -60,6 +60,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _teams = MutableStateFlow<List<TeamEntity>>(emptyList())
     val teams: StateFlow<List<TeamEntity>> = _teams.asStateFlow()
 
+    private var homeTeamId: Int? = null
+    private var awayTeamId: Int? = null
+
     private var sessionSaveJob: Job? = null
 
     init {
@@ -78,20 +81,20 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 if (id > 0) repo.getTeamsForConfig(id) else flowOf(emptyList())
             }.collect { teams ->
                 _teams.value = teams
-                val home = teams.find { it.name == _config.value.homeTeamName }
-                val away = teams.find { it.name == _config.value.awayTeamName }
-                if (home != null || away != null) {
-                    _config.value = _config.value.copy(
-                        homeTeamColor = home?.color ?: _config.value.homeTeamColor,
-                        awayTeamColor = away?.color ?: _config.value.awayTeamColor,
-                    )
-                }
+                val home = homeTeamId?.let { id -> teams.find { it.id == id } }
+                val away = awayTeamId?.let { id -> teams.find { it.id == id } }
+                var updated = _config.value
+                if (home != null) updated = updated.copy(homeTeamName = home.name, homeTeamColor = home.color)
+                if (away != null) updated = updated.copy(awayTeamName = away.name, awayTeamColor = away.color)
+                if (home != null || away != null) _config.value = updated
             }
         }
     }
 
     private fun applyStoredConfig(storedConfig: StoredConfigEntity, session: AppSessionEntity?) {
         _activeConfigId.value = storedConfig.id
+        homeTeamId = session?.homeTeamId
+        awayTeamId = session?.awayTeamId
         _config.value = storedConfig.toGameConfig(
             homeTeamName = session?.homeTeamName ?: "Home",
             homeTeamColor = session?.homeTeamColor,
@@ -163,8 +166,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val c = _config.value
         repo.saveSession(AppSessionEntity(
             activeConfigId = _activeConfigId.value,
+            homeTeamId = homeTeamId,
             homeTeamName = c.homeTeamName,
             homeTeamColor = c.homeTeamColor,
+            awayTeamId = awayTeamId,
             awayTeamName = c.awayTeamName,
             awayTeamColor = c.awayTeamColor,
             homeScore = s.homeScore,
@@ -244,12 +249,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── team names (session state, not config dirty) ──────────────────────────
 
-    fun selectHomeTeam(name: String, color: Int?) {
+    fun selectHomeTeam(id: Int, name: String, color: Int?) {
+        homeTeamId = id
         _config.value = _config.value.copy(homeTeamName = name, homeTeamColor = color)
         scheduleSessionSave()
     }
 
-    fun selectAwayTeam(name: String, color: Int?) {
+    fun selectAwayTeam(id: Int, name: String, color: Int?) {
+        awayTeamId = id
         _config.value = _config.value.copy(awayTeamName = name, awayTeamColor = color)
         scheduleSessionSave()
     }

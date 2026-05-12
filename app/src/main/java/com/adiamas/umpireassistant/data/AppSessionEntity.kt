@@ -7,8 +7,10 @@ import androidx.room.PrimaryKey
 data class AppSessionEntity(
     @PrimaryKey val id: Int = 1,
     val activeConfigId: Int = 0,
+    val homeTeamId: Int? = null,
     val homeTeamName: String = "Home",
     val homeTeamColor: Int? = null,
+    val awayTeamId: Int? = null,
     val awayTeamName: String = "Away",
     val awayTeamColor: Int? = null,
     val homeScore: Int = 0,

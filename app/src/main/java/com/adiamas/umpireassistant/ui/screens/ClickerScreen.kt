@@ -153,7 +153,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
             label = "Away",
             teams = teams,
             onDismiss = { showAwaySelector = false },
-            onSelect = { name, color -> viewModel.selectAwayTeam(name, color); showAwaySelector = false },
+            onSelect = { id, name, color -> viewModel.selectAwayTeam(id, name, color); showAwaySelector = false },
         )
     }
 
@@ -162,7 +162,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
             label = "Home",
             teams = teams,
             onDismiss = { showHomeSelector = false },
-            onSelect = { name, color -> viewModel.selectHomeTeam(name, color); showHomeSelector = false },
+            onSelect = { id, name, color -> viewModel.selectHomeTeam(id, name, color); showHomeSelector = false },
         )
     }
 }
@@ -173,7 +173,7 @@ private fun TeamSelectorDialog(
     label: String,
     teams: List<com.adiamas.umpireassistant.data.TeamEntity>,
     onDismiss: () -> Unit,
-    onSelect: (String, Int?) -> Unit,
+    onSelect: (Int, String, Int?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(teams.firstOrNull()) }
@@ -201,7 +201,7 @@ private fun TeamSelectorDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { selected?.let { onSelect(it.name, it.color) } }, enabled = selected != null) {
+            TextButton(onClick = { selected?.let { onSelect(it.id, it.name, it.color) } }, enabled = selected != null) {
                 Text("Select")
             }
         },

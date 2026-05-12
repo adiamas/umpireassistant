@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [StoredConfigEntity::class, TeamEntity::class, AppSessionEntity::class],
-    version = 3,
+    version = 4,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun storedConfigDao(): StoredConfigDao
