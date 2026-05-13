@@ -60,6 +60,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _teams = MutableStateFlow<List<TeamEntity>>(emptyList())
     val teams: StateFlow<List<TeamEntity>> = _teams.asStateFlow()
 
+    private var homeTeamId: Int? = null
+    private var awayTeamId: Int? = null
+
     private var sessionSaveJob: Job? = null
 
     init {
@@ -76,15 +79,27 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _activeConfigId.flatMapLatest { id ->
                 if (id > 0) repo.getTeamsForConfig(id) else flowOf(emptyList())
-            }.collect { _teams.value = it }
+            }.collect { teams ->
+                _teams.value = teams
+                val home = homeTeamId?.let { id -> teams.find { it.id == id } }
+                val away = awayTeamId?.let { id -> teams.find { it.id == id } }
+                var updated = _config.value
+                if (home != null) updated = updated.copy(homeTeamName = home.name, homeTeamColor = home.color)
+                if (away != null) updated = updated.copy(awayTeamName = away.name, awayTeamColor = away.color)
+                if (home != null || away != null) _config.value = updated
+            }
         }
     }
 
     private fun applyStoredConfig(storedConfig: StoredConfigEntity, session: AppSessionEntity?) {
         _activeConfigId.value = storedConfig.id
+        homeTeamId = session?.homeTeamId
+        awayTeamId = session?.awayTeamId
         _config.value = storedConfig.toGameConfig(
             homeTeamName = session?.homeTeamName ?: "Home",
+            homeTeamColor = session?.homeTeamColor,
             awayTeamName = session?.awayTeamName ?: "Away",
+            awayTeamColor = session?.awayTeamColor,
         )
         if (session != null) {
             _state.value = GameState(
@@ -151,8 +166,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val c = _config.value
         repo.saveSession(AppSessionEntity(
             activeConfigId = _activeConfigId.value,
+            homeTeamId = homeTeamId,
             homeTeamName = c.homeTeamName,
+            homeTeamColor = c.homeTeamColor,
+            awayTeamId = awayTeamId,
             awayTeamName = c.awayTeamName,
+            awayTeamColor = c.awayTeamColor,
             homeScore = s.homeScore,
             awayScore = s.awayScore,
             inning = s.inning,
@@ -230,13 +249,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── team names (session state, not config dirty) ──────────────────────────
 
-    fun selectHomeTeam(name: String) {
-        _config.value = _config.value.copy(homeTeamName = name)
+    fun selectHomeTeam(id: Int, name: String, color: Int?) {
+        homeTeamId = id
+        _config.value = _config.value.copy(homeTeamName = name, homeTeamColor = color)
         scheduleSessionSave()
     }
 
-    fun selectAwayTeam(name: String) {
-        _config.value = _config.value.copy(awayTeamName = name)
+    fun selectAwayTeam(id: Int, name: String, color: Int?) {
+        awayTeamId = id
+        _config.value = _config.value.copy(awayTeamName = name, awayTeamColor = color)
         scheduleSessionSave()
     }
 
@@ -272,6 +293,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         updateConfig { copy(gameLengthMinutes = value.coerceIn(0, 120)) }
         if (!_timerRunning.value) _timerSeconds.value = _config.value.gameLengthMinutes * 60
     }
+
+    fun updateScrollTeamNames(value: Boolean) = updateConfig { copy(scrollTeamNames = value) }
 
     // ── stored config management ──────────────────────────────────────────────
 
@@ -310,6 +333,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 volumeUp = c.volumeUp.name,
                 volumeDown = c.volumeDown.name,
                 gameLengthMinutes = c.gameLengthMinutes,
+                scrollTeamNames = c.scrollTeamNames,
             )
             val savedId = if (existing != null) {
                 repo.updateConfig(entity); existing.id
@@ -336,9 +360,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── team management ───────────────────────────────────────────────────────
 
-    fun addTeam(name: String) {
+    fun addTeam(name: String, color: Int? = null) {
         if (_activeConfigId.value == 0) return
-        viewModelScope.launch { repo.addTeam(TeamEntity(configId = _activeConfigId.value, name = name)) }
+        viewModelScope.launch { repo.addTeam(TeamEntity(configId = _activeConfigId.value, name = name, color = color)) }
     }
 
     fun updateTeam(team: TeamEntity) { viewModelScope.launch { repo.updateTeam(team) } }
@@ -427,9 +451,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
 // ── mapping helpers ───────────────────────────────────────────────────────────
 
-private fun StoredConfigEntity.toGameConfig(homeTeamName: String, awayTeamName: String) = GameConfig(
+private fun StoredConfigEntity.toGameConfig(homeTeamName: String, homeTeamColor: Int? = null, awayTeamName: String, awayTeamColor: Int? = null) = GameConfig(
     homeTeamName = homeTeamName,
+    homeTeamColor = homeTeamColor,
     awayTeamName = awayTeamName,
+    awayTeamColor = awayTeamColor,
     sport = Sport.valueOf(sport),
     strikesPerOut = strikesPerOut,
     ballsPerWalk = ballsPerWalk,
@@ -441,4 +467,5 @@ private fun StoredConfigEntity.toGameConfig(homeTeamName: String, awayTeamName: 
     volumeUp = VolumeAction.valueOf(volumeUp),
     volumeDown = VolumeAction.valueOf(volumeDown),
     gameLengthMinutes = gameLengthMinutes,
+    scrollTeamNames = scrollTeamNames,
 )

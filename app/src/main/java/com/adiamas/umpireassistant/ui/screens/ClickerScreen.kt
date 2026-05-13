@@ -3,6 +3,7 @@ package com.adiamas.umpireassistant.ui.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -21,9 +22,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -31,6 +34,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,7 +75,9 @@ fun ClickerScreen(viewModel: GameViewModel) {
     var showClockResetConfirm by remember { mutableStateOf(false) }
     var showHomeSelector by remember { mutableStateOf(false) }
     var showAwaySelector by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -81,6 +88,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
         ScoreRow(
             state = state,
             config = config,
+            scrollTeamNames = config.scrollTeamNames,
             onAddRun = { viewModel.addRun() },
             onSelectAwayTeam = { showAwaySelector = true },
             onSelectHomeTeam = { showHomeSelector = true },
@@ -113,6 +121,17 @@ fun ClickerScreen(viewModel: GameViewModel) {
         )
     }
 
+    Box(modifier = Modifier.align(Alignment.TopEnd)) {
+        IconButton(onClick = { showMenu = true }) {
+            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
+        }
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(text = { Text("Share Game Score") }, onClick = { showMenu = false })
+            DropdownMenuItem(text = { Text("Reset Clicker") }, onClick = { showMenu = false })
+        }
+    }
+    } // end outer Box
+
     if (showClockResetConfirm) {
         AlertDialog(
             onDismissRequest = { showClockResetConfirm = false },
@@ -133,18 +152,18 @@ fun ClickerScreen(viewModel: GameViewModel) {
     if (showAwaySelector) {
         TeamSelectorDialog(
             label = "Away",
-            teams = teams.map { it.name },
+            teams = teams,
             onDismiss = { showAwaySelector = false },
-            onSelect = { viewModel.selectAwayTeam(it); showAwaySelector = false },
+            onSelect = { id, name, color -> viewModel.selectAwayTeam(id, name, color); showAwaySelector = false },
         )
     }
 
     if (showHomeSelector) {
         TeamSelectorDialog(
             label = "Home",
-            teams = teams.map { it.name },
+            teams = teams,
             onDismiss = { showHomeSelector = false },
-            onSelect = { viewModel.selectHomeTeam(it); showHomeSelector = false },
+            onSelect = { id, name, color -> viewModel.selectHomeTeam(id, name, color); showHomeSelector = false },
         )
     }
 }
@@ -153,19 +172,19 @@ fun ClickerScreen(viewModel: GameViewModel) {
 @Composable
 private fun TeamSelectorDialog(
     label: String,
-    teams: List<String>,
+    teams: List<com.adiamas.umpireassistant.data.TeamEntity>,
     onDismiss: () -> Unit,
-    onSelect: (String) -> Unit,
+    onSelect: (Int, String, Int?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var selected by remember { mutableStateOf(teams.firstOrNull() ?: "") }
+    var selected by remember { mutableStateOf(teams.firstOrNull()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select $label team") },
         text = {
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                 OutlinedTextField(
-                    value = selected,
+                    value = selected?.name ?: "",
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -173,17 +192,17 @@ private fun TeamSelectorDialog(
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    teams.forEach { name ->
+                    teams.forEach { team ->
                         DropdownMenuItem(
-                            text = { Text(name) },
-                            onClick = { selected = name; expanded = false },
+                            text = { Text(team.name) },
+                            onClick = { selected = team; expanded = false },
                         )
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSelect(selected) }, enabled = selected.isNotEmpty()) {
+            TextButton(onClick = { selected?.let { onSelect(it.id, it.name, it.color) } }, enabled = selected != null) {
                 Text("Select")
             }
         },
@@ -195,6 +214,7 @@ private fun TeamSelectorDialog(
 private fun ScoreRow(
     state: GameState,
     config: GameConfig,
+    scrollTeamNames: Boolean,
     onAddRun: () -> Unit,
     onSelectAwayTeam: () -> Unit,
     onSelectHomeTeam: () -> Unit,
@@ -207,16 +227,20 @@ private fun ScoreRow(
     ) {
         TeamScoreBox(
             name = config.awayTeamName,
+            teamColor = config.awayTeamColor,
             score = state.awayScore,
             isBatting = state.isTopHalf,
+            scrollName = scrollTeamNames,
             onClick = onAddRun,
             onLongClick = onSelectAwayTeam,
             modifier = Modifier.weight(1f),
         )
         TeamScoreBox(
             name = config.homeTeamName,
+            teamColor = config.homeTeamColor,
             score = state.homeScore,
             isBatting = !state.isTopHalf,
+            scrollName = scrollTeamNames,
             onClick = onAddRun,
             onLongClick = onSelectHomeTeam,
             modifier = Modifier.weight(1f),
@@ -233,8 +257,10 @@ private fun ScoreRow(
 @Composable
 private fun TeamScoreBox(
     name: String,
+    teamColor: Int?,
     score: Int,
     isBatting: Boolean,
+    scrollName: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -242,34 +268,56 @@ private fun TeamScoreBox(
     Box(
         modifier = modifier
             .fillMaxHeight()
+            .graphicsLayer { alpha = if (isBatting) 1f else 0.5f }
+            .then(if (isBatting) Modifier.border(3.dp, Color(0xFF0D47A1), RoundedCornerShape(8.dp)) else Modifier)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isBatting) ScoreBlue else ScoreBlueInactive)
+            .background(ScoreBlue)
             .combinedClickable(
                 onClick = { if (isBatting) onClick() },
                 onLongClick = onLongClick,
             ),
-        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize(),
         ) {
-            Text(
-                text = "▼",
-                color = if (isBatting) Color.White else Color.Transparent,
-                fontSize = 20.sp,
-            )
-            Text(
-                text = name,
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately),
-            )
+            if (teamColor != null) {
+                val pillColor = Color(teamColor)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 6.dp)
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(pillColor),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = name,
+                        color = if (pillColor.luminance() > 0.5f) Color.Black else Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                            .then(if (scrollName) Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400) else Modifier),
+                    )
+                }
+            } else {
+                Text(
+                    text = name,
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                        .then(if (scrollName) Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately, initialDelayMillis = 2400, repeatDelayMillis = 2400) else Modifier),
+                )
+            }
             Text(
                 text = "$score",
                 color = Color.White,
+                modifier = Modifier.padding(horizontal = 12.dp),
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Bold,
                 lineHeight = 56.sp,

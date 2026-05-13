@@ -34,8 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -199,20 +197,6 @@ fun SettingsScreen(viewModel: GameViewModel) {
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Color(0xFFFFB300))
-                Text(
-                    "Set any option to Off to disable it in game view.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
         Text("Game Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
@@ -317,6 +301,15 @@ fun SettingsScreen(viewModel: GameViewModel) {
             selected = config.volumeDown,
             excluded = config.volumeUp.takeIf { it != VolumeAction.OFF },
             onSelect = { viewModel.updateVolumeDown(it) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        Text("UI Settings", style = MaterialTheme.typography.titleMedium)
+
+        ToggleStepperRow(
+            label = "Scroll team names",
+            value = config.scrollTeamNames,
+            onToggle = { viewModel.updateScrollTeamNames(it) },
         )
 
     }
@@ -453,6 +446,32 @@ private fun FoulMode.label() = when (this) {
     FoulMode.ALWAYS_STRIKES -> "Strikes"
     FoulMode.STRIKE_CAP -> "Strikes, no foul out"
     FoulMode.INDEPENDENT -> "Fouls"
+}
+
+@Composable
+private fun ToggleStepperRow(label: String, value: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, modifier = Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onToggle(false) }, enabled = value) {
+                Text("−", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+            Text(
+                text = if (value) "On" else "Off",
+                modifier = Modifier.width(32.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            IconButton(onClick = { onToggle(true) }, enabled = !value) {
+                Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
 }
 
 @Composable

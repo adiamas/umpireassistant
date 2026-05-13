@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.UmpireAssistant" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.UmpireAssistant" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.UmpireAssistant.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#021848</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ua_splash_icon</item>
+        <item name="windowSplashScreenIconBackgroundColor">#021848</item>
+        <item name="postSplashScreenTheme">@style/Theme.UmpireAssistant</item>
+    </style>
 </resources>

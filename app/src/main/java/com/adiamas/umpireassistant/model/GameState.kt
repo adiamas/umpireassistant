@@ -8,7 +8,9 @@ enum class VolumeAction { OFF, BALL, STRIKE, FOUL, OUT, RUN_SCORED, NEW_AT_BAT }
 
 data class GameConfig(
     val homeTeamName: String = "Home",
+    val homeTeamColor: Int? = null,
     val awayTeamName: String = "Away",
+    val awayTeamColor: Int? = null,
     val sport: Sport = Sport.BASEBALL,
     val strikesPerOut: Int = 3,
     val ballsPerWalk: Int = 4,
@@ -20,6 +22,7 @@ data class GameConfig(
     val volumeUp: VolumeAction = VolumeAction.OFF,
     val volumeDown: VolumeAction = VolumeAction.OFF,
     val gameLengthMinutes: Int = 45,
+    val scrollTeamNames: Boolean = true,
 )
 
 data class GameState(

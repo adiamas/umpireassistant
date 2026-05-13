@@ -19,4 +19,5 @@ data class StoredConfigEntity(
     val volumeUp: String = "OFF",
     val volumeDown: String = "OFF",
     val gameLengthMinutes: Int = 45,
+    val scrollTeamNames: Boolean = true,
 )
