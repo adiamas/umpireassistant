@@ -3,6 +3,7 @@ package com.adiamas.umpireassistant
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowInsetsCompat
@@ -12,8 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -25,6 +26,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.adiamas.umpireassistant.R
 import com.adiamas.umpireassistant.ui.screens.ClickerScreen
 import com.adiamas.umpireassistant.ui.screens.SettingsScreen
 import com.adiamas.umpireassistant.ui.screens.TeamsScreen
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        installSplashScreen()
         enableEdgeToEdge()
         setContent {
             UmpireAssistantTheme {
@@ -73,7 +76,7 @@ fun MainNavigation(viewModel: GameViewModel) {
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.TouchApp, contentDescription = "Clicker") },
+                    icon = { Icon(painterResource(R.drawable.ic_clicker), contentDescription = "Clicker") },
                     label = { Text("Clicker") },
                     selected = currentRoute == "clicker",
                     onClick = { navController.navigate("clicker") { launchSingleTop = true } },

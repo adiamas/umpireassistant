@@ -34,8 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -199,20 +197,6 @@ fun SettingsScreen(viewModel: GameViewModel) {
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Color(0xFFFFB300))
-                Text(
-                    "Set any option to Off to disable it in game view.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
         Text("Game Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
@@ -228,12 +212,6 @@ fun SettingsScreen(viewModel: GameViewModel) {
             onDecrement = { viewModel.updateGameLengthMinutes(config.gameLengthMinutes - 5) },
             onIncrement = { viewModel.updateGameLengthMinutes(config.gameLengthMinutes + 5) },
             showOffAtZero = true,
-        )
-
-        ToggleStepperRow(
-            label = "Scroll team names",
-            value = config.scrollTeamNames,
-            onToggle = { viewModel.updateScrollTeamNames(it) },
         )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
@@ -323,6 +301,15 @@ fun SettingsScreen(viewModel: GameViewModel) {
             selected = config.volumeDown,
             excluded = config.volumeUp.takeIf { it != VolumeAction.OFF },
             onSelect = { viewModel.updateVolumeDown(it) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        Text("UI Settings", style = MaterialTheme.typography.titleMedium)
+
+        ToggleStepperRow(
+            label = "Scroll team names",
+            value = config.scrollTeamNames,
+            onToggle = { viewModel.updateScrollTeamNames(it) },
         )
 
     }
