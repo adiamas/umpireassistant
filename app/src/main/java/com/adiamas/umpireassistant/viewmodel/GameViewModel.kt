@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.adiamas.umpireassistant.data.AppDatabase
 import com.adiamas.umpireassistant.data.AppRepository
+import com.adiamas.umpireassistant.data.SessionDatabase
 import com.adiamas.umpireassistant.data.AppSessionEntity
 import com.adiamas.umpireassistant.data.StoredConfigEntity
 import com.adiamas.umpireassistant.data.TeamEntity
@@ -24,7 +25,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
-    private val repo = AppRepository(AppDatabase.getInstance(application))
+    private val repo = AppRepository(AppDatabase.getInstance(application), SessionDatabase.getInstance(application))
 
     private val _config = MutableStateFlow(GameConfig())
     val config: StateFlow<GameConfig> = _config.asStateFlow()
@@ -37,6 +38,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val timerSeconds: StateFlow<Int> = _timerSeconds.asStateFlow()
     private val _timerRunning = MutableStateFlow(false)
     val timerRunning: StateFlow<Boolean> = _timerRunning.asStateFlow()
+    private val _timerExpired = MutableStateFlow(false)
+    val timerExpired: StateFlow<Boolean> = _timerExpired.asStateFlow()
 
     private val _undoStack = mutableListOf<GameState>()
     private val _redoStack = mutableListOf<GameState>()
@@ -80,13 +83,22 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             _activeConfigId.flatMapLatest { id ->
                 if (id > 0) repo.getTeamsForConfig(id) else flowOf(emptyList())
             }.collect { teams ->
-                _teams.value = teams
+                _teams.value = teams.sortedBy { it.name.lowercase() }
                 val home = homeTeamId?.let { id -> teams.find { it.id == id } }
                 val away = awayTeamId?.let { id -> teams.find { it.id == id } }
                 var updated = _config.value
-                if (home != null) updated = updated.copy(homeTeamName = home.name, homeTeamColor = home.color)
-                if (away != null) updated = updated.copy(awayTeamName = away.name, awayTeamColor = away.color)
-                if (home != null || away != null) _config.value = updated
+                var changed = false
+                if (home != null) {
+                    updated = updated.copy(homeTeamName = home.name, homeTeamColor = home.color); changed = true
+                } else if (homeTeamId != null) {
+                    homeTeamId = null; updated = updated.copy(homeTeamName = "Home", homeTeamColor = null); changed = true
+                }
+                if (away != null) {
+                    updated = updated.copy(awayTeamName = away.name, awayTeamColor = away.color); changed = true
+                } else if (awayTeamId != null) {
+                    awayTeamId = null; updated = updated.copy(awayTeamName = "Away", awayTeamColor = null); changed = true
+                }
+                if (changed) _config.value = updated
             }
         }
     }
@@ -221,6 +233,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 val newFouls = state.fouls + 1
                 if (newFouls >= config.foulsPerOut) incrementOuts()
                 else update { copy(fouls = newFouls) }
+            }
+            FoulMode.TRACK_ONLY -> {
+                if (state.fouls < 10) update { copy(fouls = fouls + 1) }
             }
         }
     }
@@ -383,8 +398,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     _timerSeconds.value--
                 }
                 _timerRunning.value = false
+                _timerExpired.value = true
             }
         }
+    }
+
+    fun clearTimerExpired() {
+        _timerExpired.value = false
     }
 
     fun resetTimer() {
@@ -444,6 +464,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = GameState()
         _undoStack.clear(); _redoStack.clear()
         _canUndo.value = false; _canRedo.value = false
+        homeTeamId = null
+        awayTeamId = null
+        _config.value = _config.value.copy(
+            homeTeamName = "Home", homeTeamColor = null,
+            awayTeamName = "Away", awayTeamColor = null,
+        )
         resetTimer()
         scheduleSessionSave()
     }

@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -77,6 +78,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
     }
     var configDropdownExpanded by remember { mutableStateOf(false) }
     var pendingConfigId by remember { mutableStateOf<Int?>(null) }
+    var showDeleteConfigConfirm by remember { mutableStateOf(false) }
     val hasChanges = isDirty || state.homeScore > 0 || state.awayScore > 0 || state.inning > 1
     var dropdownExpanded by remember { mutableStateOf(false) }
     val activeConfig = storedConfigs.find { it.id == activeConfigId }
@@ -90,80 +92,6 @@ fun SettingsScreen(viewModel: GameViewModel) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
-        Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
-        AnimatedContent(
-            targetState = showSaveMessage,
-            modifier = Modifier.fillMaxWidth(),
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label = "StoredSettingsArea",
-        ) { isSaved ->
-            if (isSaved) {
-                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = ActionGreen)
-                        Text(
-                            "Settings have been saved.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = ActionGreen,
-                        )
-                    }
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ExposedDropdownMenuBox(
-                        expanded = configDropdownExpanded,
-                        onExpandedChange = { configDropdownExpanded = it },
-                    ) {
-                        OutlinedTextField(
-                            value = activeConfig?.name ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = configDropdownExpanded) },
-                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
-                        )
-                        ExposedDropdownMenu(
-                            expanded = configDropdownExpanded,
-                            onDismissRequest = { configDropdownExpanded = false },
-                        ) {
-                            storedConfigs.forEach { sc ->
-                                DropdownMenuItem(
-                                    text = { Text(sc.name) },
-                                    onClick = {
-                                        configDropdownExpanded = false
-                                        if (hasChanges) pendingConfigId = sc.id
-                                        else viewModel.switchConfig(sc.id)
-                                    },
-                                )
-                            }
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text("New Settings") },
-                                onClick = {
-                                    configDropdownExpanded = false
-                                    showSaveConfigDialog = true
-                                },
-                            )
-                        }
-                    }
-                    Button(
-                        onClick = {
-                            viewModel.saveCurrentConfig(activeConfig!!.name)
-                            showSaveMessage = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = isDirty && activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
-                        colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
-                    ) { Text("Save Settings") }
-                }
-            }
-        }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Game Status", style = MaterialTheme.typography.titleMedium)
@@ -197,6 +125,95 @@ fun SettingsScreen(viewModel: GameViewModel) {
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        Text("Stored Settings", style = MaterialTheme.typography.titleMedium)
+        AnimatedContent(
+            targetState = showSaveMessage,
+            modifier = Modifier.fillMaxWidth(),
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "StoredSettingsArea",
+        ) { isSaved ->
+            if (isSaved) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = ActionGreen)
+                        Text(
+                            "Settings have been saved.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ActionGreen,
+                        )
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        ExposedDropdownMenuBox(
+                            expanded = configDropdownExpanded,
+                            onExpandedChange = { configDropdownExpanded = it },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            OutlinedTextField(
+                                value = activeConfig?.name ?: "",
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = configDropdownExpanded) },
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            )
+                            ExposedDropdownMenu(
+                                expanded = configDropdownExpanded,
+                                onDismissRequest = { configDropdownExpanded = false },
+                            ) {
+                                storedConfigs.forEach { sc ->
+                                    DropdownMenuItem(
+                                        text = { Text(sc.name) },
+                                        onClick = {
+                                            configDropdownExpanded = false
+                                            if (hasChanges) pendingConfigId = sc.id
+                                            else viewModel.switchConfig(sc.id)
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        val canDelete = activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true)
+                        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = "+",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .clickable { showSaveConfigDialog = true }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                            Text(
+                                text = "−",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (canDelete) Color.Unspecified else Color.Gray,
+                                modifier = Modifier
+                                    .then(if (canDelete) Modifier.clickable { showDeleteConfigConfirm = true } else Modifier)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.saveCurrentConfig(activeConfig!!.name)
+                            showSaveMessage = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = isDirty && activeConfig != null && !activeConfig.name.equals("Default", ignoreCase = true),
+                        colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
+                    ) { Text("Save Settings") }
+                }
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("Game Settings", style = MaterialTheme.typography.titleMedium)
 
         StepperRow(
@@ -209,8 +226,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
         StepperRow(
             label = "Game length (min)",
             value = config.gameLengthMinutes,
-            onDecrement = { viewModel.updateGameLengthMinutes(config.gameLengthMinutes - 5) },
-            onIncrement = { viewModel.updateGameLengthMinutes(config.gameLengthMinutes + 5) },
+            onDecrement = {
+                val next = when {
+                    config.gameLengthMinutes <= 1 -> 0
+                    config.gameLengthMinutes <= 5 -> 1
+                    else -> config.gameLengthMinutes - 5
+                }
+                viewModel.updateGameLengthMinutes(next)
+            },
+            onIncrement = {
+                val next = when {
+                    config.gameLengthMinutes == 0 -> 1
+                    config.gameLengthMinutes < 5 -> 5
+                    else -> config.gameLengthMinutes + 5
+                }
+                viewModel.updateGameLengthMinutes(next)
+            },
             showOffAtZero = true,
         )
 
@@ -240,7 +271,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             showOffAtZero = true,
         )
 
-        Text("Fouls are:")
+        Text("Foul Rules:")
         ExposedDropdownMenuBox(
             expanded = dropdownExpanded,
             onExpandedChange = { dropdownExpanded = it },
@@ -272,7 +303,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
         }
         if (config.foulMode == FoulMode.STRIKE_CAP) {
             StepperRow(
-                label = "Max foul strikes",
+                label = "Foul strike limit",
                 value = config.maxFoulCount,
                 onDecrement = { viewModel.updateMaxFoulCount(config.maxFoulCount - 1) },
                 onIncrement = { viewModel.updateMaxFoulCount(config.maxFoulCount + 1) },
@@ -345,6 +376,23 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 TextButton(onClick = { showResetConfirm = false }) {
                     Text("Cancel")
                 }
+            },
+        )
+    }
+
+    if (showDeleteConfigConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfigConfirm = false },
+            title = { Text("Delete Settings") },
+            text = { Text("Delete \"${activeConfig?.name}\"? This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    activeConfig?.let { viewModel.deleteStoredConfig(it.id) }
+                    showDeleteConfigConfirm = false
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfigConfirm = false }) { Text("Cancel") }
             },
         )
     }
@@ -443,9 +491,10 @@ private fun VolumeAction.label() = when (this) {
 
 private fun FoulMode.label() = when (this) {
     FoulMode.NOT_COUNTED -> "Off"
-    FoulMode.ALWAYS_STRIKES -> "Strikes"
-    FoulMode.STRIKE_CAP -> "Strikes, no foul out"
-    FoulMode.INDEPENDENT -> "Fouls"
+    FoulMode.ALWAYS_STRIKES -> "Fouls = Strikes"
+    FoulMode.STRIKE_CAP -> "Fouls = Strikes (Limited)"
+    FoulMode.INDEPENDENT -> "Allow Foul Outs"
+    FoulMode.TRACK_ONLY -> "Track Only"
 }
 
 @Composable

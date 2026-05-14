@@ -1,5 +1,6 @@
 package com.adiamas.umpireassistant.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
@@ -22,11 +23,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -34,15 +33,16 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
@@ -71,11 +71,30 @@ fun ClickerScreen(viewModel: GameViewModel) {
     val canRedo by viewModel.canRedo.collectAsState()
     val timerSeconds by viewModel.timerSeconds.collectAsState()
     val timerRunning by viewModel.timerRunning.collectAsState()
+    val timerExpired by viewModel.timerExpired.collectAsState()
     val teams by viewModel.teams.collectAsState()
+    val context = LocalContext.current
     var showClockResetConfirm by remember { mutableStateOf(false) }
+    var showResetClickerConfirm by remember { mutableStateOf(false) }
+    var showGameOverDialog by remember { mutableStateOf(false) }
     var showHomeSelector by remember { mutableStateOf(false) }
     var showAwaySelector by remember { mutableStateOf(false) }
-    var showMenu by remember { mutableStateOf(false) }
+
+    LaunchedEffect(timerExpired) {
+        if (timerExpired) {
+            showGameOverDialog = true
+            viewModel.clearTimerExpired()
+        }
+    }
+
+    val shareGameScore = {
+        val text = "${config.awayTeamName} ${state.awayScore}, ${config.homeTeamName} ${state.homeScore}"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(Intent.createChooser(intent, null))
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
     Column(
@@ -121,15 +140,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
         )
     }
 
-    Box(modifier = Modifier.align(Alignment.TopEnd)) {
-        IconButton(onClick = { showMenu = true }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
-        }
-        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-            DropdownMenuItem(text = { Text("Share Game Score") }, onClick = { showMenu = false })
-            DropdownMenuItem(text = { Text("Reset Clicker") }, onClick = { showMenu = false })
-        }
-    }
     } // end outer Box
 
     if (showClockResetConfirm) {
@@ -145,6 +155,43 @@ fun ClickerScreen(viewModel: GameViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showClockResetConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showResetClickerConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetClickerConfirm = false },
+            title = { Text("Reset Clicker") },
+            text = { Text("This will reset the score, pitch count, game clock, and team assignments. Continue?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetGame()
+                    showResetClickerConfirm = false
+                }) { Text("Reset") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetClickerConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showGameOverDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Game Clock Expired") },
+            text = { Text("The game clock has run out.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetTimer()
+                    showGameOverDialog = false
+                }) { Text("Continue Play") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showGameOverDialog = false
+                    shareGameScore()
+                }) { Text("Share Game Score") }
             },
         )
     }
