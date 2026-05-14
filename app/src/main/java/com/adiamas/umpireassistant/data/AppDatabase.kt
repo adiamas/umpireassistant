@@ -6,13 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [StoredConfigEntity::class, TeamEntity::class, AppSessionEntity::class],
-    version = 5,
+    entities = [StoredConfigEntity::class, TeamEntity::class],
+    version = 6,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun storedConfigDao(): StoredConfigDao
     abstract fun teamDao(): TeamDao
-    abstract fun appSessionDao(): AppSessionDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
