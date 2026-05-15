@@ -333,6 +333,18 @@ fun SettingsScreen(viewModel: GameViewModel) {
             excluded = config.volumeUp.takeIf { it != VolumeAction.OFF },
             onSelect = { viewModel.updateVolumeDown(it) },
         )
+        Text("Volume up - Long press")
+        VolumeActionDropdown(
+            selected = config.volumeUpLong,
+            excluded = config.volumeDownLong.takeIf { it != VolumeAction.OFF },
+            onSelect = { viewModel.updateVolumeUpLong(it) },
+        )
+        Text("Volume down - Long press")
+        VolumeActionDropdown(
+            selected = config.volumeDownLong,
+            excluded = config.volumeUpLong.takeIf { it != VolumeAction.OFF },
+            onSelect = { viewModel.updateVolumeDownLong(it) },
+        )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
         Text("UI Settings", style = MaterialTheme.typography.titleMedium)

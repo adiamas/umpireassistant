@@ -52,6 +52,7 @@ import com.adiamas.umpireassistant.ui.screens.TeamsScreen
 import androidx.compose.ui.unit.dp
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.ui.theme.UmpireAssistantTheme
+import com.adiamas.umpireassistant.model.VolumeAction
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
 class MainActivity : ComponentActivity() {
@@ -65,14 +66,45 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private var volumeUpLongPressed = false
+    private var volumeDownLongPressed = false
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        val action = when (keyCode) {
-            KeyEvent.KEYCODE_VOLUME_UP -> viewModel.config.value.volumeUp
-            KeyEvent.KEYCODE_VOLUME_DOWN -> viewModel.config.value.volumeDown
+        val (short, long) = when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> Pair(viewModel.config.value.volumeUp, viewModel.config.value.volumeUpLong)
+            KeyEvent.KEYCODE_VOLUME_DOWN -> Pair(viewModel.config.value.volumeDown, viewModel.config.value.volumeDownLong)
             else -> return super.onKeyDown(keyCode, event)
         }
-        return if (viewModel.dispatchVolumeAction(action)) true
-        else super.onKeyDown(keyCode, event)
+        if (short == VolumeAction.OFF && long == VolumeAction.OFF)
+            return super.onKeyDown(keyCode, event)
+        event?.startTracking()
+        return true
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
+        val action = when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> { volumeUpLongPressed = true; viewModel.config.value.volumeUpLong }
+            KeyEvent.KEYCODE_VOLUME_DOWN -> { volumeDownLongPressed = true; viewModel.config.value.volumeDownLong }
+            else -> return super.onKeyLongPress(keyCode, event)
+        }
+        viewModel.dispatchVolumeAction(action)
+        return true
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                if (!volumeUpLongPressed) viewModel.dispatchVolumeAction(viewModel.config.value.volumeUp)
+                volumeUpLongPressed = false
+                true
+            }
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                if (!volumeDownLongPressed) viewModel.dispatchVolumeAction(viewModel.config.value.volumeDown)
+                volumeDownLongPressed = false
+                true
+            }
+            else -> super.onKeyUp(keyCode, event)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
