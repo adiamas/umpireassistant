@@ -2,7 +2,7 @@ package com.adiamas.umpireassistant.model
 
 enum class Sport { BASEBALL, SOFTBALL, KICKBALL }
 
-enum class FoulMode { NOT_COUNTED, ALWAYS_STRIKES, STRIKE_CAP, INDEPENDENT }
+enum class FoulMode { NOT_COUNTED, ALWAYS_STRIKES, STRIKE_CAP, INDEPENDENT, TRACK_ONLY }
 
 enum class VolumeAction { OFF, BALL, STRIKE, FOUL, OUT, RUN_SCORED, NEW_AT_BAT }
 

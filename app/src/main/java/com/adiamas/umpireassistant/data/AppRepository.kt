@@ -2,10 +2,10 @@ package com.adiamas.umpireassistant.data
 
 import kotlinx.coroutines.flow.Flow
 
-class AppRepository(private val db: AppDatabase) {
+class AppRepository(private val db: AppDatabase, private val sessionDb: SessionDatabase) {
 
     val configs: Flow<List<StoredConfigEntity>> = db.storedConfigDao().getAllConfigs()
-    val session: Flow<AppSessionEntity?> = db.appSessionDao().getSession()
+    val session: Flow<AppSessionEntity?> = sessionDb.appSessionDao().getSession()
 
     fun getTeamsForConfig(configId: Int): Flow<List<TeamEntity>> =
         db.teamDao().getTeamsForConfig(configId)
@@ -22,7 +22,7 @@ class AppRepository(private val db: AppDatabase) {
     suspend fun updateTeam(team: TeamEntity) = db.teamDao().update(team)
     suspend fun deleteTeam(team: TeamEntity) = db.teamDao().delete(team)
 
-    suspend fun saveSession(session: AppSessionEntity) = db.appSessionDao().save(session)
+    suspend fun saveSession(session: AppSessionEntity) = sessionDb.appSessionDao().save(session)
 
     suspend fun ensureDefaultConfig(): Int {
         val existing = db.storedConfigDao().getDefault()
