@@ -8,6 +8,8 @@ private val AppColorScheme = lightColorScheme(
     primary = ScoreBlue,
     secondary = ActionGreen,
     error = OutRed,
+    background = AppBackgroundDark,
+    surface = AppBackground,
 )
 
 @Composable
