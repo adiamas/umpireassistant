@@ -18,6 +18,8 @@ data class StoredConfigEntity(
     val foulsPerOut: Int = 3,
     val volumeUp: String = "OFF",
     val volumeDown: String = "OFF",
+    val volumeUpLong: String = "OFF",
+    val volumeDownLong: String = "OFF",
     val gameLengthMinutes: Int = 45,
     val scrollTeamNames: Boolean = true,
 )

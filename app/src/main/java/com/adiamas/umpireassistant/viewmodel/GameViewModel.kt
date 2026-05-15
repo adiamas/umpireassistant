@@ -41,6 +41,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _timerExpired = MutableStateFlow(false)
     val timerExpired: StateFlow<Boolean> = _timerExpired.asStateFlow()
 
+    private val _inningLimitReached = MutableStateFlow(false)
+    val inningLimitReached: StateFlow<Boolean> = _inningLimitReached.asStateFlow()
+
     private val _undoStack = mutableListOf<GameState>()
     private val _redoStack = mutableListOf<GameState>()
     private var _actionDepth = 0
@@ -258,9 +261,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.isTopHalf) {
             update { copy(isTopHalf = false, balls = 0, strikes = 0, fouls = 0, outs = 0) }
         } else {
-            update { copy(isTopHalf = true, inning = inning + 1, balls = 0, strikes = 0, fouls = 0, outs = 0) }
+            val newInning = _state.value.inning + 1
+            update { copy(isTopHalf = true, inning = newInning, balls = 0, strikes = 0, fouls = 0, outs = 0) }
+            if (newInning > _config.value.inningsPerGame) _inningLimitReached.value = true
         }
     }
+
+    fun clearInningLimitReached() { _inningLimitReached.value = false }
 
     // ── team names (session state, not config dirty) ──────────────────────────
 
@@ -303,6 +310,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun updateFoulsPerOut(value: Int) = updateConfig { copy(foulsPerOut = value.coerceIn(1, 5)) }
     fun updateVolumeUp(action: VolumeAction) = updateConfig { copy(volumeUp = action) }
     fun updateVolumeDown(action: VolumeAction) = updateConfig { copy(volumeDown = action) }
+    fun updateVolumeUpLong(action: VolumeAction) = updateConfig { copy(volumeUpLong = action) }
+    fun updateVolumeDownLong(action: VolumeAction) = updateConfig { copy(volumeDownLong = action) }
 
     fun updateGameLengthMinutes(value: Int) {
         updateConfig { copy(gameLengthMinutes = value.coerceIn(0, 120)) }
@@ -347,6 +356,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 foulsPerOut = c.foulsPerOut,
                 volumeUp = c.volumeUp.name,
                 volumeDown = c.volumeDown.name,
+                volumeUpLong = c.volumeUpLong.name,
+                volumeDownLong = c.volumeDownLong.name,
                 gameLengthMinutes = c.gameLengthMinutes,
                 scrollTeamNames = c.scrollTeamNames,
             )
@@ -492,6 +503,8 @@ private fun StoredConfigEntity.toGameConfig(homeTeamName: String, homeTeamColor:
     foulsPerOut = foulsPerOut,
     volumeUp = VolumeAction.valueOf(volumeUp),
     volumeDown = VolumeAction.valueOf(volumeDown),
+    volumeUpLong = VolumeAction.valueOf(volumeUpLong),
+    volumeDownLong = VolumeAction.valueOf(volumeDownLong),
     gameLengthMinutes = gameLengthMinutes,
     scrollTeamNames = scrollTeamNames,
 )
