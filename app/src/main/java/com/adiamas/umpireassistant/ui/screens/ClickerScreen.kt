@@ -72,11 +72,13 @@ fun ClickerScreen(viewModel: GameViewModel) {
     val timerSeconds by viewModel.timerSeconds.collectAsState()
     val timerRunning by viewModel.timerRunning.collectAsState()
     val timerExpired by viewModel.timerExpired.collectAsState()
+    val inningLimitReached by viewModel.inningLimitReached.collectAsState()
     val teams by viewModel.teams.collectAsState()
     val context = LocalContext.current
     var showClockResetConfirm by remember { mutableStateOf(false) }
     var showResetClickerConfirm by remember { mutableStateOf(false) }
     var showGameOverDialog by remember { mutableStateOf(false) }
+    var showInningLimitDialog by remember { mutableStateOf(false) }
     var showHomeSelector by remember { mutableStateOf(false) }
     var showAwaySelector by remember { mutableStateOf(false) }
 
@@ -84,6 +86,13 @@ fun ClickerScreen(viewModel: GameViewModel) {
         if (timerExpired) {
             showGameOverDialog = true
             viewModel.clearTimerExpired()
+        }
+    }
+
+    LaunchedEffect(inningLimitReached) {
+        if (inningLimitReached) {
+            showInningLimitDialog = true
+            viewModel.clearInningLimitReached()
         }
     }
 
@@ -185,13 +194,27 @@ fun ClickerScreen(viewModel: GameViewModel) {
                 TextButton(onClick = {
                     viewModel.resetTimer()
                     showGameOverDialog = false
-                }) { Text("Continue Play") }
+                }) { Text("Continue Game") }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showGameOverDialog = false
                     shareGameScore()
                 }) { Text("Share Game Score") }
+            },
+        )
+    }
+
+    if (showInningLimitDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Inning Limit Reached") },
+            text = { Text("The game inning limit has been reached.") },
+            confirmButton = {
+                TextButton(onClick = { showInningLimitDialog = false }) { Text("Continue Game") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showInningLimitDialog = false; shareGameScore() }) { Text("Share Game Score") }
             },
         )
     }
@@ -431,9 +454,37 @@ private fun CountRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CountCell(label = "Ball", value = state.balls, enabled = config.ballsPerWalk > 0, onClick = onBall)
-            CountCell(label = "Strike", value = state.strikes, enabled = config.strikesPerOut > 0, onClick = onStrike)
-            CountCell(label = "Foul", value = state.fouls, enabled = config.foulMode != FoulMode.NOT_COUNTED, onClick = onFoul)
+            CountCell(label = "Balls", value = state.balls, enabled = config.ballsPerWalk > 0, onClick = onBall)
+            when (config.foulMode) {
+                FoulMode.ALWAYS_STRIKES -> {
+                    CountCell(
+                        label = "Strikes & Fouls",
+                        value = state.strikes,
+                        enabled = config.strikesPerOut > 0,
+                        onClick = onFoul,
+                    )
+                }
+                FoulMode.STRIKE_CAP -> {
+                    CountCell(label = "Strikes", value = state.strikes, enabled = config.strikesPerOut > 0, onClick = onStrike)
+                    CountCell(
+                        label = "Fouls",
+                        value = state.fouls,
+                        enabled = state.fouls < config.maxFoulCount,
+                        onClick = onFoul,
+                        valueContent = { color ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("${state.fouls}", color = color, fontSize = 38.sp, fontWeight = FontWeight.Bold, lineHeight = 42.sp)
+                                Text(" of ", color = color, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                Text("${config.maxFoulCount}", color = color, fontSize = 38.sp, fontWeight = FontWeight.Bold, lineHeight = 42.sp)
+                            }
+                        },
+                    )
+                }
+                else -> {
+                    CountCell(label = "Strikes", value = state.strikes, enabled = config.strikesPerOut > 0, onClick = onStrike)
+                    CountCell(label = "Fouls", value = state.fouls, enabled = config.foulMode != FoulMode.NOT_COUNTED, onClick = onFoul)
+                }
+            }
         }
         Box(
             modifier = Modifier
@@ -445,7 +496,7 @@ private fun CountRow(
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Out", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("Outs", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Text("${state.outs}", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
             }
         }
@@ -453,7 +504,13 @@ private fun CountRow(
 }
 
 @Composable
-private fun CountCell(label: String, value: Int, enabled: Boolean = true, onClick: () -> Unit) {
+private fun CountCell(
+    label: String,
+    value: Int,
+    enabled: Boolean = true,
+    valueContent: (@Composable (Color) -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     val contentColor = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
     Column(
         modifier = Modifier
@@ -462,13 +519,17 @@ private fun CountCell(label: String, value: Int, enabled: Boolean = true, onClic
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(label, color = contentColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text(
-            text = if (!enabled) "Off" else "$value",
-            color = contentColor,
-            fontSize = 38.sp,
-            fontWeight = FontWeight.Bold,
-            lineHeight = 42.sp,
-        )
+        if (valueContent != null) {
+            valueContent(contentColor)
+        } else {
+            Text(
+                text = if (!enabled) "Off" else "$value",
+                color = contentColor,
+                fontSize = 38.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 42.sp,
+            )
+        }
     }
 }
 
