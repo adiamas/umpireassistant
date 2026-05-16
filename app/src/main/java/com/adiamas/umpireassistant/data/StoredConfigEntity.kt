@@ -8,7 +8,6 @@ data class StoredConfigEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val isDefault: Boolean = false,
-    val sport: String = "BASEBALL",
     val strikesPerOut: Int = 3,
     val ballsPerWalk: Int = 4,
     val outsPerInning: Int = 3,
