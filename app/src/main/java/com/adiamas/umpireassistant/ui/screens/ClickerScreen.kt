@@ -103,7 +103,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
         context.startActivity(Intent.createChooser(intent, null))
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -146,8 +145,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onRedo = { viewModel.redo() },
         )
     }
-
-    } // end outer Box
 
     if (showClockResetConfirm) {
         AlertDialog(
