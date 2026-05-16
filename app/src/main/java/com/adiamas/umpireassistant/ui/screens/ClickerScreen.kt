@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -556,26 +557,8 @@ private fun BottomRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val undoColor = if (canUndo) Color.White else Color.White.copy(alpha = 0.35f)
-            val redoColor = if (canRedo) Color.White else Color.White.copy(alpha = 0.35f)
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight()
-                    .then(if (canUndo) Modifier.clickable { onUndo() } else Modifier),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text("Undo", color = undoColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = undoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
-            }
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight()
-                    .then(if (canRedo) Modifier.clickable { onRedo() } else Modifier),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text("Redo", color = redoColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = null, tint = redoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
-            }
+            UndoRedoButton(label = "Undo", icon = Icons.AutoMirrored.Filled.Undo, enabled = canUndo, onClick = onUndo)
+            UndoRedoButton(label = "Redo", icon = Icons.AutoMirrored.Filled.Redo, enabled = canRedo, onClick = onRedo)
         }
     }
 }
@@ -602,6 +585,20 @@ private fun ActionButtons(onRunScored: () -> Unit, onNewAtBat: () -> Unit) {
         colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
     ) {
         Text("New at-bat", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun UndoRedoButton(label: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit) {
+    val color = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+    Column(
+        modifier = Modifier.weight(1f).fillMaxHeight()
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(label, color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
     }
 }
 
