@@ -60,7 +60,6 @@ import com.adiamas.umpireassistant.ui.theme.AppBackground
 import com.adiamas.umpireassistant.ui.theme.CountDark
 import com.adiamas.umpireassistant.ui.theme.OutRed
 import com.adiamas.umpireassistant.ui.theme.ScoreBlue
-import com.adiamas.umpireassistant.ui.theme.ScoreBlueInactive
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
 @Composable
