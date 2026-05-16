@@ -29,6 +29,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
@@ -69,7 +70,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
     val canUndo by viewModel.canUndo.collectAsState()
     val canRedo by viewModel.canRedo.collectAsState()
     val timerSeconds by viewModel.timerSeconds.collectAsState()
-    val timerRunning by viewModel.timerRunning.collectAsState()
     val timerExpired by viewModel.timerExpired.collectAsState()
     val inningLimitReached by viewModel.inningLimitReached.collectAsState()
     val teams by viewModel.teams.collectAsState()
@@ -130,7 +130,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
         BottomRow(
             gameLengthMinutes = config.gameLengthMinutes,
             timerSeconds = timerSeconds,
-            timerRunning = timerRunning,
             onTimerTap = { viewModel.toggleTimer() },
             onTimerLongPress = { showClockResetConfirm = true },
             canUndo = canUndo,
@@ -231,7 +230,7 @@ private fun TeamSelectorDialog(
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     teams.forEach { team ->
@@ -510,7 +509,6 @@ private fun CountCell(
 private fun BottomRow(
     gameLengthMinutes: Int,
     timerSeconds: Int,
-    timerRunning: Boolean,
     onTimerTap: () -> Unit,
     onTimerLongPress: () -> Unit,
     canUndo: Boolean,
