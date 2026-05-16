@@ -12,7 +12,6 @@ import com.adiamas.umpireassistant.data.TeamEntity
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
-import com.adiamas.umpireassistant.model.Sport
 import com.adiamas.umpireassistant.model.VolumeAction
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -285,8 +284,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── config settings ───────────────────────────────────────────────────────
 
-    fun updateSport(sport: Sport) = updateConfig { copy(sport = sport) }
-
     fun updateStrikesPerOut(value: Int) = updateConfig {
         val newValue = value.coerceIn(0, 5)
         val newFoulMode = if (newValue == 0 && (foulMode == FoulMode.ALWAYS_STRIKES || foulMode == FoulMode.STRIKE_CAP))
@@ -346,7 +343,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 id = existing?.id ?: 0,
                 name = name,
                 isDefault = existing?.isDefault ?: false,
-                sport = c.sport.name,
                 strikesPerOut = c.strikesPerOut,
                 ballsPerWalk = c.ballsPerWalk,
                 outsPerInning = c.outsPerInning,
@@ -483,7 +479,6 @@ private fun StoredConfigEntity.toGameConfig(homeTeamName: String, homeTeamColor:
     homeTeamColor = homeTeamColor,
     awayTeamName = awayTeamName,
     awayTeamColor = awayTeamColor,
-    sport = Sport.valueOf(sport),
     strikesPerOut = strikesPerOut,
     ballsPerWalk = ballsPerWalk,
     outsPerInning = outsPerInning,
