@@ -459,16 +459,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return true
     }
 
-    // ── team names (TeamsScreen compat) ───────────────────────────────────────
-
-    fun updateTeamNames(homeName: String, awayName: String) {
-        _config.value = _config.value.copy(
-            homeTeamName = homeName.ifBlank { "Home" },
-            awayTeamName = awayName.ifBlank { "Away" },
-        )
-        scheduleSessionSave()
-    }
-
     // ── reset ─────────────────────────────────────────────────────────────────
 
     fun resetGame() {
