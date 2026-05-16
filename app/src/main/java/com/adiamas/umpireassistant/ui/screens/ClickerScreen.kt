@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
-import com.adiamas.umpireassistant.model.Sport
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.ui.theme.AppBackground
 import com.adiamas.umpireassistant.ui.theme.CountDark
@@ -128,7 +127,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
         )
         Spacer(modifier = Modifier.weight(1f))
         ActionButtons(
-            sport = config.sport,
             onRunScored = { viewModel.addRun() },
             onNewAtBat = { viewModel.resetPitchCount() },
         )
@@ -583,9 +581,7 @@ private fun BottomRow(
 }
 
 @Composable
-private fun ActionButtons(sport: Sport, onRunScored: () -> Unit, onNewAtBat: () -> Unit) {
-    val runLabel = if (sport == Sport.KICKBALL) "Runner scored!" else "Run scored!"
-
+private fun ActionButtons(onRunScored: () -> Unit, onNewAtBat: () -> Unit) {
     Button(
         onClick = onRunScored,
         modifier = Modifier
@@ -594,7 +590,7 @@ private fun ActionButtons(sport: Sport, onRunScored: () -> Unit, onNewAtBat: () 
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
     ) {
-        Text(runLabel, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("Run scored!", fontSize = 22.sp, fontWeight = FontWeight.Bold)
     }
     Spacer(modifier = Modifier.height(8.dp))
     Button(
