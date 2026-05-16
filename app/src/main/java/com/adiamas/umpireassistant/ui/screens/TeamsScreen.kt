@@ -125,7 +125,7 @@ fun TeamsScreen(viewModel: GameViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.padding(bottom = 8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = { showAddDialog = true },
             modifier = Modifier.fillMaxWidth(),

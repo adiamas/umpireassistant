@@ -1,7 +1,6 @@
 package com.adiamas.umpireassistant.ui.screens
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -29,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.data.StoredConfigEntity
@@ -161,7 +160,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                                 readOnly = true,
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = configDropdownExpanded) },
                                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                             )
                             ExposedDropdownMenu(
                                 expanded = configDropdownExpanded,
@@ -282,7 +281,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
             )
             ExposedDropdownMenu(
                 expanded = dropdownExpanded,
@@ -477,7 +476,7 @@ private fun VolumeActionDropdown(
             readOnly = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             VolumeAction.entries.forEach { action ->
@@ -541,13 +540,10 @@ private fun StepperRow(
     value: Int,
     onDecrement: () -> Unit,
     onIncrement: () -> Unit,
-    startPadding: Dp = 0.dp,
     showOffAtZero: Boolean = false,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = startPadding),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {

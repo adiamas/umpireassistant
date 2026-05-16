@@ -12,7 +12,6 @@ import com.adiamas.umpireassistant.data.TeamEntity
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
-import com.adiamas.umpireassistant.model.Sport
 import com.adiamas.umpireassistant.model.VolumeAction
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -175,6 +174,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun clearUndoRedo() {
+        _undoStack.clear(); _redoStack.clear()
+        _canUndo.value = false; _canRedo.value = false
+    }
+
     private suspend fun persistSession() {
         if (_activeConfigId.value == 0) return
         val s = _state.value
@@ -285,8 +289,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── config settings ───────────────────────────────────────────────────────
 
-    fun updateSport(sport: Sport) = updateConfig { copy(sport = sport) }
-
     fun updateStrikesPerOut(value: Int) = updateConfig {
         val newValue = value.coerceIn(0, 5)
         val newFoulMode = if (newValue == 0 && (foulMode == FoulMode.ALWAYS_STRIKES || foulMode == FoulMode.STRIKE_CAP))
@@ -328,8 +330,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             val currentHome = _config.value.homeTeamName
             val currentAway = _config.value.awayTeamName
             _state.value = GameState()
-            _undoStack.clear(); _redoStack.clear()
-            _canUndo.value = false; _canRedo.value = false
+            clearUndoRedo()
             _activeConfigId.value = storedConfig.id
             _config.value = storedConfig.toGameConfig(homeTeamName = currentHome, awayTeamName = currentAway)
             _timerSeconds.value = storedConfig.gameLengthMinutes * 60
@@ -346,7 +347,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 id = existing?.id ?: 0,
                 name = name,
                 isDefault = existing?.isDefault ?: false,
-                sport = c.sport.name,
                 strikesPerOut = c.strikesPerOut,
                 ballsPerWalk = c.ballsPerWalk,
                 outsPerInning = c.outsPerInning,
@@ -459,22 +459,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return true
     }
 
-    // ── team names (TeamsScreen compat) ───────────────────────────────────────
-
-    fun updateTeamNames(homeName: String, awayName: String) {
-        _config.value = _config.value.copy(
-            homeTeamName = homeName.ifBlank { "Home" },
-            awayTeamName = awayName.ifBlank { "Away" },
-        )
-        scheduleSessionSave()
-    }
-
     // ── reset ─────────────────────────────────────────────────────────────────
 
     fun resetGame() {
         _state.value = GameState()
-        _undoStack.clear(); _redoStack.clear()
-        _canUndo.value = false; _canRedo.value = false
+        clearUndoRedo()
         homeTeamId = null
         awayTeamId = null
         _config.value = _config.value.copy(
@@ -493,7 +482,6 @@ private fun StoredConfigEntity.toGameConfig(homeTeamName: String, homeTeamColor:
     homeTeamColor = homeTeamColor,
     awayTeamName = awayTeamName,
     awayTeamColor = awayTeamColor,
-    sport = Sport.valueOf(sport),
     strikesPerOut = strikesPerOut,
     ballsPerWalk = ballsPerWalk,
     outsPerInning = outsPerInning,

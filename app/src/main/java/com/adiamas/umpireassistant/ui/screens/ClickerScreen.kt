@@ -1,6 +1,5 @@
 package com.adiamas.umpireassistant.ui.screens
 
-import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
@@ -30,6 +29,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
@@ -48,19 +48,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
-import com.adiamas.umpireassistant.model.Sport
+import com.adiamas.umpireassistant.ui.shareText
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.ui.theme.AppBackground
 import com.adiamas.umpireassistant.ui.theme.CountDark
 import com.adiamas.umpireassistant.ui.theme.OutRed
 import com.adiamas.umpireassistant.ui.theme.ScoreBlue
-import com.adiamas.umpireassistant.ui.theme.ScoreBlueInactive
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
 @Composable
@@ -70,13 +70,11 @@ fun ClickerScreen(viewModel: GameViewModel) {
     val canUndo by viewModel.canUndo.collectAsState()
     val canRedo by viewModel.canRedo.collectAsState()
     val timerSeconds by viewModel.timerSeconds.collectAsState()
-    val timerRunning by viewModel.timerRunning.collectAsState()
     val timerExpired by viewModel.timerExpired.collectAsState()
     val inningLimitReached by viewModel.inningLimitReached.collectAsState()
     val teams by viewModel.teams.collectAsState()
     val context = LocalContext.current
     var showClockResetConfirm by remember { mutableStateOf(false) }
-    var showResetClickerConfirm by remember { mutableStateOf(false) }
     var showGameOverDialog by remember { mutableStateOf(false) }
     var showInningLimitDialog by remember { mutableStateOf(false) }
     var showHomeSelector by remember { mutableStateOf(false) }
@@ -97,15 +95,9 @@ fun ClickerScreen(viewModel: GameViewModel) {
     }
 
     val shareGameScore = {
-        val text = "${config.awayTeamName} ${state.awayScore}, ${config.homeTeamName} ${state.homeScore}"
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        context.startActivity(Intent.createChooser(intent, null))
+        context.shareText("${config.awayTeamName} ${state.awayScore}, ${config.homeTeamName} ${state.homeScore}")
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -131,7 +123,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
         )
         Spacer(modifier = Modifier.weight(1f))
         ActionButtons(
-            sport = config.sport,
             onRunScored = { viewModel.addRun() },
             onNewAtBat = { viewModel.resetPitchCount() },
         )
@@ -139,7 +130,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
         BottomRow(
             gameLengthMinutes = config.gameLengthMinutes,
             timerSeconds = timerSeconds,
-            timerRunning = timerRunning,
             onTimerTap = { viewModel.toggleTimer() },
             onTimerLongPress = { showClockResetConfirm = true },
             canUndo = canUndo,
@@ -148,8 +138,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onRedo = { viewModel.redo() },
         )
     }
-
-    } // end outer Box
 
     if (showClockResetConfirm) {
         AlertDialog(
@@ -164,23 +152,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showClockResetConfirm = false }) { Text("Cancel") }
-            },
-        )
-    }
-
-    if (showResetClickerConfirm) {
-        AlertDialog(
-            onDismissRequest = { showResetClickerConfirm = false },
-            title = { Text("Reset Clicker") },
-            text = { Text("This will reset the score, pitch count, game clock, and team assignments. Continue?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.resetGame()
-                    showResetClickerConfirm = false
-                }) { Text("Reset") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetClickerConfirm = false }) { Text("Cancel") }
             },
         )
     }
@@ -259,7 +230,7 @@ private fun TeamSelectorDialog(
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     teams.forEach { team ->
@@ -538,7 +509,6 @@ private fun CountCell(
 private fun BottomRow(
     gameLengthMinutes: Int,
     timerSeconds: Int,
-    timerRunning: Boolean,
     onTimerTap: () -> Unit,
     onTimerLongPress: () -> Unit,
     canUndo: Boolean,
@@ -580,34 +550,14 @@ private fun BottomRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val undoColor = if (canUndo) Color.White else Color.White.copy(alpha = 0.35f)
-            val redoColor = if (canRedo) Color.White else Color.White.copy(alpha = 0.35f)
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight()
-                    .then(if (canUndo) Modifier.clickable { onUndo() } else Modifier),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text("Undo", color = undoColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = undoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
-            }
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight()
-                    .then(if (canRedo) Modifier.clickable { onRedo() } else Modifier),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text("Redo", color = redoColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = null, tint = redoColor, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
-            }
+            UndoRedoButton(label = "Undo", icon = Icons.AutoMirrored.Filled.Undo, enabled = canUndo, onClick = onUndo, modifier = Modifier.weight(1f))
+            UndoRedoButton(label = "Redo", icon = Icons.AutoMirrored.Filled.Redo, enabled = canRedo, onClick = onRedo, modifier = Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun ActionButtons(sport: Sport, onRunScored: () -> Unit, onNewAtBat: () -> Unit) {
-    val runLabel = if (sport == Sport.KICKBALL) "Runner scored!" else "Run scored!"
-
+private fun ActionButtons(onRunScored: () -> Unit, onNewAtBat: () -> Unit) {
     Button(
         onClick = onRunScored,
         modifier = Modifier
@@ -616,7 +566,7 @@ private fun ActionButtons(sport: Sport, onRunScored: () -> Unit, onNewAtBat: () 
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
     ) {
-        Text(runLabel, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("Run scored!", fontSize = 22.sp, fontWeight = FontWeight.Bold)
     }
     Spacer(modifier = Modifier.height(8.dp))
     Button(
@@ -628,6 +578,20 @@ private fun ActionButtons(sport: Sport, onRunScored: () -> Unit, onNewAtBat: () 
         colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
     ) {
         Text("New at-bat", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun UndoRedoButton(label: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val color = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+    Column(
+        modifier = modifier.fillMaxHeight()
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(label, color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
     }
 }
 

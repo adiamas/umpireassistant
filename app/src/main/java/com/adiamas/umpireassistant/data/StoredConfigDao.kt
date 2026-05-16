@@ -30,7 +30,4 @@ interface StoredConfigDao {
 
     @Query("SELECT * FROM stored_configs WHERE name = :name LIMIT 1")
     suspend fun getByName(name: String): StoredConfigEntity?
-
-    @Query("SELECT COUNT(*) FROM stored_configs")
-    suspend fun count(): Int
 }

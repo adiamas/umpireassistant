@@ -1,6 +1,5 @@
 package com.adiamas.umpireassistant
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
@@ -52,6 +51,7 @@ import com.adiamas.umpireassistant.ui.screens.TeamsScreen
 import androidx.compose.ui.unit.dp
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.ui.theme.UmpireAssistantTheme
+import com.adiamas.umpireassistant.ui.shareText
 import com.adiamas.umpireassistant.model.VolumeAction
 import com.adiamas.umpireassistant.viewmodel.GameViewModel
 
@@ -132,12 +132,7 @@ fun MainNavigation(viewModel: GameViewModel) {
     var showResetConfirm by remember { mutableStateOf(false) }
 
     val shareGameScore = {
-        val text = "${config.awayTeamName} ${state.awayScore}, ${config.homeTeamName} ${state.homeScore}"
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        context.startActivity(Intent.createChooser(intent, null))
+        context.shareText("${config.awayTeamName} ${state.awayScore}, ${config.homeTeamName} ${state.homeScore}")
     }
 
     Scaffold(
