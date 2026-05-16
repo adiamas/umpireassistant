@@ -75,7 +75,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
     val teams by viewModel.teams.collectAsState()
     val context = LocalContext.current
     var showClockResetConfirm by remember { mutableStateOf(false) }
-    var showResetClickerConfirm by remember { mutableStateOf(false) }
     var showGameOverDialog by remember { mutableStateOf(false) }
     var showInningLimitDialog by remember { mutableStateOf(false) }
     var showHomeSelector by remember { mutableStateOf(false) }
@@ -163,23 +162,6 @@ fun ClickerScreen(viewModel: GameViewModel) {
             },
             dismissButton = {
                 TextButton(onClick = { showClockResetConfirm = false }) { Text("Cancel") }
-            },
-        )
-    }
-
-    if (showResetClickerConfirm) {
-        AlertDialog(
-            onDismissRequest = { showResetClickerConfirm = false },
-            title = { Text("Reset Clicker") },
-            text = { Text("This will reset the score, pitch count, game clock, and team assignments. Continue?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.resetGame()
-                    showResetClickerConfirm = false
-                }) { Text("Reset") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetClickerConfirm = false }) { Text("Cancel") }
             },
         )
     }
