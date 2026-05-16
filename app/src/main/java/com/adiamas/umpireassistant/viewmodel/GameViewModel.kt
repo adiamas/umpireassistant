@@ -174,6 +174,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun clearUndoRedo() {
+        _undoStack.clear(); _redoStack.clear()
+        _canUndo.value = false; _canRedo.value = false
+    }
+
     private suspend fun persistSession() {
         if (_activeConfigId.value == 0) return
         val s = _state.value
@@ -325,8 +330,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             val currentHome = _config.value.homeTeamName
             val currentAway = _config.value.awayTeamName
             _state.value = GameState()
-            _undoStack.clear(); _redoStack.clear()
-            _canUndo.value = false; _canRedo.value = false
+            clearUndoRedo()
             _activeConfigId.value = storedConfig.id
             _config.value = storedConfig.toGameConfig(homeTeamName = currentHome, awayTeamName = currentAway)
             _timerSeconds.value = storedConfig.gameLengthMinutes * 60
@@ -459,8 +463,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetGame() {
         _state.value = GameState()
-        _undoStack.clear(); _redoStack.clear()
-        _canUndo.value = false; _canRedo.value = false
+        clearUndoRedo()
         homeTeamId = null
         awayTeamId = null
         _config.value = _config.value.copy(
