@@ -1,6 +1,5 @@
 package com.adiamas.umpireassistant.ui.screens
 
-import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
@@ -55,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.model.FoulMode
 import com.adiamas.umpireassistant.model.GameConfig
 import com.adiamas.umpireassistant.model.GameState
+import com.adiamas.umpireassistant.ui.shareText
 import com.adiamas.umpireassistant.ui.theme.ActionGreen
 import com.adiamas.umpireassistant.ui.theme.AppBackground
 import com.adiamas.umpireassistant.ui.theme.CountDark
@@ -95,12 +95,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
     }
 
     val shareGameScore = {
-        val text = "${config.awayTeamName} ${state.awayScore}, ${config.homeTeamName} ${state.homeScore}"
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        context.startActivity(Intent.createChooser(intent, null))
+        context.shareText("${config.awayTeamName} ${state.awayScore}, ${config.homeTeamName} ${state.homeScore}")
     }
 
     Column(
