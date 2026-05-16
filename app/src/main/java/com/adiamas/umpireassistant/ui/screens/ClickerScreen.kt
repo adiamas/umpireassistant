@@ -552,8 +552,8 @@ private fun BottomRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            UndoRedoButton(label = "Undo", icon = Icons.AutoMirrored.Filled.Undo, enabled = canUndo, onClick = onUndo)
-            UndoRedoButton(label = "Redo", icon = Icons.AutoMirrored.Filled.Redo, enabled = canRedo, onClick = onRedo)
+            UndoRedoButton(label = "Undo", icon = Icons.AutoMirrored.Filled.Undo, enabled = canUndo, onClick = onUndo, modifier = Modifier.weight(1f))
+            UndoRedoButton(label = "Redo", icon = Icons.AutoMirrored.Filled.Redo, enabled = canRedo, onClick = onRedo, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -584,10 +584,10 @@ private fun ActionButtons(onRunScored: () -> Unit, onNewAtBat: () -> Unit) {
 }
 
 @Composable
-private fun UndoRedoButton(label: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit) {
+private fun UndoRedoButton(label: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val color = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
     Column(
-        modifier = Modifier.weight(1f).fillMaxHeight()
+        modifier = modifier.fillMaxHeight()
             .then(if (enabled) Modifier.clickable { onClick() } else Modifier),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
