@@ -321,6 +321,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateScrollTeamNames(value: Boolean) = updateConfig { copy(scrollTeamNames = value) }
+    fun updateLargeButtonLayout(value: Boolean) = updateConfig { copy(largeButtonLayout = value) }
 
     // ── stored config management ──────────────────────────────────────────────
 
@@ -360,6 +361,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 volumeDownLong = c.volumeDownLong.name,
                 gameLengthMinutes = c.gameLengthMinutes,
                 scrollTeamNames = c.scrollTeamNames,
+                largeButtonLayout = c.largeButtonLayout,
             )
             val savedId = if (existing != null) {
                 repo.updateConfig(entity); existing.id
@@ -495,4 +497,5 @@ private fun StoredConfigEntity.toGameConfig(homeTeamName: String, homeTeamColor:
     volumeDownLong = VolumeAction.valueOf(volumeDownLong),
     gameLengthMinutes = gameLengthMinutes,
     scrollTeamNames = scrollTeamNames,
+    largeButtonLayout = largeButtonLayout,
 )
