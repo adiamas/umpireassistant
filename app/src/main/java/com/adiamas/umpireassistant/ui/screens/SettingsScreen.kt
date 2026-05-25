@@ -354,6 +354,12 @@ fun SettingsScreen(viewModel: GameViewModel) {
             onToggle = { viewModel.updateScrollTeamNames(it) },
         )
 
+        ToggleStepperRow(
+            label = "Large button layout",
+            value = config.largeButtonLayout,
+            onToggle = { viewModel.updateLargeButtonLayout(it) },
+        )
+
     }
 
     pendingConfigId?.let { configId ->

@@ -113,14 +113,25 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onSelectAwayTeam = { showAwaySelector = true },
             onSelectHomeTeam = { showHomeSelector = true },
         )
-        CountRow(
-            state = state,
-            config = config,
-            onBall = { viewModel.incrementBalls() },
-            onStrike = { viewModel.incrementStrikes() },
-            onFoul = { viewModel.incrementFouls() },
-            onOut = { viewModel.incrementOuts() },
-        )
+        if (config.largeButtonLayout) {
+            LargeCountButtons(
+                state = state,
+                config = config,
+                onBall = { viewModel.incrementBalls() },
+                onStrike = { viewModel.incrementStrikes() },
+                onFoul = { viewModel.incrementFouls() },
+                onOut = { viewModel.incrementOuts() },
+            )
+        } else {
+            CountRow(
+                state = state,
+                config = config,
+                onBall = { viewModel.incrementBalls() },
+                onStrike = { viewModel.incrementStrikes() },
+                onFoul = { viewModel.incrementFouls() },
+                onOut = { viewModel.incrementOuts() },
+            )
+        }
         Spacer(modifier = Modifier.weight(1f))
         ActionButtons(
             onRunScored = { viewModel.addRun() },
@@ -578,6 +589,86 @@ private fun ActionButtons(onRunScored: () -> Unit, onNewAtBat: () -> Unit) {
         colors = ButtonDefaults.buttonColors(containerColor = ActionGreen),
     ) {
         Text("New at-bat", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun LargeCountButtons(
+    state: GameState,
+    config: GameConfig,
+    onBall: () -> Unit,
+    onStrike: () -> Unit,
+    onFoul: () -> Unit,
+    onOut: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LargeCountButton(
+            label = "Balls",
+            value = if (config.ballsPerWalk == 0) "Off" else "${state.balls}",
+            enabled = config.ballsPerWalk > 0,
+            backgroundColor = CountDark,
+            onClick = onBall,
+        )
+        when (config.foulMode) {
+            FoulMode.ALWAYS_STRIKES -> LargeCountButton(
+                label = "Strikes & Fouls",
+                value = "${state.strikes}",
+                enabled = config.strikesPerOut > 0,
+                backgroundColor = CountDark,
+                onClick = onFoul,
+            )
+            FoulMode.NOT_COUNTED -> LargeCountButton(
+                label = "Strikes",
+                value = if (config.strikesPerOut == 0) "Off" else "${state.strikes}",
+                enabled = config.strikesPerOut > 0,
+                backgroundColor = CountDark,
+                onClick = onStrike,
+            )
+            else -> {
+                LargeCountButton(
+                    label = "Strikes",
+                    value = if (config.strikesPerOut == 0) "Off" else "${state.strikes}",
+                    enabled = config.strikesPerOut > 0,
+                    backgroundColor = CountDark,
+                    onClick = onStrike,
+                )
+                val foulValue = if (config.foulMode == FoulMode.STRIKE_CAP)
+                    "${state.fouls}/${config.maxFoulCount}" else "${state.fouls}"
+                LargeCountButton(
+                    label = "Fouls",
+                    value = foulValue,
+                    enabled = config.foulMode != FoulMode.STRIKE_CAP || state.fouls < config.maxFoulCount,
+                    backgroundColor = CountDark,
+                    onClick = onFoul,
+                )
+            }
+        }
+        LargeCountButton(label = "Outs", value = "${state.outs}", enabled = true, backgroundColor = OutRed, onClick = onOut)
+    }
+}
+
+@Composable
+private fun LargeCountButton(
+    label: String,
+    value: String,
+    enabled: Boolean,
+    backgroundColor: Color,
+    onClick: () -> Unit,
+) {
+    val contentColor = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, color = contentColor, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Text(value, color = contentColor, fontSize = 44.sp, fontWeight = FontWeight.Bold, lineHeight = 48.sp)
     }
 }
 
