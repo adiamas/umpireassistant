@@ -1,3 +1,6 @@
+# umpireassistant
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
 # Umpire Assistant
 
 An Android app for baseball, softball, and kickball officials. It tracks pitch counts, runs, and game state during a game.
