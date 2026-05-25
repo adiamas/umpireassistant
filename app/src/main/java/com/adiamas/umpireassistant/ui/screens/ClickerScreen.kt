@@ -113,14 +113,25 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onSelectAwayTeam = { showAwaySelector = true },
             onSelectHomeTeam = { showHomeSelector = true },
         )
-        CountRow(
-            state = state,
-            config = config,
-            onBall = { viewModel.incrementBalls() },
-            onStrike = { viewModel.incrementStrikes() },
-            onFoul = { viewModel.incrementFouls() },
-            onOut = { viewModel.incrementOuts() },
-        )
+        if (config.largeButtonLayout) {
+            LargeCountButtons(
+                state = state,
+                config = config,
+                onBall = { viewModel.incrementBalls() },
+                onStrike = { viewModel.incrementStrikes() },
+                onFoul = { viewModel.incrementFouls() },
+                onOut = { viewModel.incrementOuts() },
+            )
+        } else {
+            CountRow(
+                state = state,
+                config = config,
+                onBall = { viewModel.incrementBalls() },
+                onStrike = { viewModel.incrementStrikes() },
+                onFoul = { viewModel.incrementFouls() },
+                onOut = { viewModel.incrementOuts() },
+            )
+        }
         Spacer(modifier = Modifier.weight(1f))
         ActionButtons(
             onRunScored = { viewModel.addRun() },
