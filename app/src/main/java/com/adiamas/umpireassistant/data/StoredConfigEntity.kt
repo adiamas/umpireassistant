@@ -21,4 +21,5 @@ data class StoredConfigEntity(
     val volumeDownLong: String = "OFF",
     val gameLengthMinutes: Int = 45,
     val scrollTeamNames: Boolean = true,
+    val largeButtonLayout: Boolean = false,
 )
