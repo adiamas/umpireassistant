@@ -1,6 +1,6 @@
 # Umpire Assistant
 
-An Android app for baseball, softball, and kickball officials. It tracks pitch counts, runs, and game state during a game — designed to be operated with one hand while your attention stays on the field.
+An Android app for baseball, softball, and kickball officials. It tracks pitch counts, runs, and game state during a game.
 
 ## Screenshots
 
@@ -29,11 +29,6 @@ _Screenshots coming soon._
 ## Configuration System
 
 Settings are grouped into named configurations (e.g., "Default", "Tournament"). Each configuration stores pitch count rules, foul mode, game length, and UI preferences. Switching configurations resets the current game state. The Default configuration cannot be deleted.
-
-## Get the App
-
-- **Google Play** — _coming soon_
-- **F-Droid** — _coming soon_
 
 ## Building from Source
 
