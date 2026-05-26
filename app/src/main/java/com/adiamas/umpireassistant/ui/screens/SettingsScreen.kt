@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import android.content.Intent
+import android.net.Uri
+import com.adiamas.umpireassistant.BuildConfig
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -358,6 +360,26 @@ fun SettingsScreen(viewModel: GameViewModel) {
             label = "Large button layout",
             value = config.largeButtonLayout,
             onToggle = { viewModel.updateLargeButtonLayout(it) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
+        Text("App Info", style = MaterialTheme.typography.titleMedium)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("Version")
+            Text("${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        }
+
+        Text(
+            text = "Report a bug",
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/adiamas/umpireassistant/issues"))
+                context.startActivity(intent)
+            },
         )
 
     }
