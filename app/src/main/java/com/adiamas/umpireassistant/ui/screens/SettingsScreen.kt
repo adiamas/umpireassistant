@@ -363,7 +363,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
         )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.DarkGray)
-        Text("App Info", style = MaterialTheme.typography.titleMedium)
+        Text("About", style = MaterialTheme.typography.titleMedium)
 
         Row(
             modifier = Modifier.fillMaxWidth(),
