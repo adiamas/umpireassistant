@@ -34,6 +34,10 @@ Settings are grouped into named configurations (e.g., "Default", "Tournament"). 
 
 Requires Android Studio. Clone the repo, open the project, and run on a device or emulator running Android 8.0+. No API keys or external services required.
 
+## Acknowledgements
+
+The Umpire Assistant creators would like to acknowledge the inspiration provided by the [Kickball Umpire Assistant](https://github.com/mlm09kDev/Kickball-Umpire-Assistant) team. Their application served as a valued tool for the developers as they refereed a variety of leagues across multiple years. Their clean interface and usability was the foundation for Umpire Assistant, and we're grateful for their work.
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE).
