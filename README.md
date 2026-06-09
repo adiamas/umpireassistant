@@ -30,6 +30,10 @@ _Screenshots coming soon._
 
 Settings are grouped into named configurations (e.g., "Default", "Tournament"). Each configuration stores pitch count rules, foul mode, game length, and UI preferences. Switching configurations resets the current game state. The Default configuration cannot be deleted.
 
+## Documentation
+
+A full user guide is available on the [wiki](https://github.com/adiamas/umpireassistant/wiki).
+
 ## Building from Source
 
 Requires Android Studio. Clone the repo, open the project, and run on a device or emulator running Android 8.0+. No API keys or external services required.
