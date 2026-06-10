@@ -38,3 +38,8 @@ app/build/
 .cxx
 local.properties
 .claude/
+
+# Signing
+*.jks
+*.keystore
+keystore.properties
