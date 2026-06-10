@@ -8,7 +8,7 @@ _Screenshots coming soon._
 
 ## Features
 
-- Pitch count tracking: balls, strikes, fouls, and outs — auto-advances on walk, strikeout, or end of inning
+- Pitch count tracking: balls, strikes, fouls, and outs - auto-advances on walk, strikeout, or end of inning
 - Run scoring for home and away teams, with the batting team highlighted
 - Inning tracker with top/bottom half display
 - Configurable game clock with expiry alert
@@ -22,9 +22,9 @@ _Screenshots coming soon._
 
 ## Screens
 
-- **Clicker** — the main game screen; tap to count pitches and runs, long-press the Clicker tab for end-of-game options
-- **Teams** — manage team names and colors for the active configuration
-- **Settings** — adjust game rules, configure volume buttons, manage saved configurations
+- **Clicker** - the main game screen; tap to count pitches and runs, long-press the Clicker tab for end-of-game options
+- **Teams** - manage team names and colors for the active configuration
+- **Settings** - adjust game rules, configure volume buttons, manage saved configurations
 
 ## Configuration System
 
