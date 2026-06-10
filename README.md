@@ -4,7 +4,7 @@ An Android app for baseball, softball, and kickball officials. It tracks pitch c
 
 ## Screenshots
 
-<img width="300" alt="Clicker" src="https://github.com/user-attachments/assets/9ef3b5db-077d-456d-ae99-58af3247f2b1" /> <img width="300" alt="Settings" src="https://github.com/user-attachments/assets/666776c8-9e7b-40be-a2ce-bfec7ffe17f0" /> <img width="300" alt="Teams" src="https://github.com/user-attachments/assets/3b0ef8ed-105a-409f-a8f3-6d980616f041" />
+<img width="200" alt="Clicker" src="https://github.com/user-attachments/assets/9ef3b5db-077d-456d-ae99-58af3247f2b1" /> <img width="200" alt="Settings" src="https://github.com/user-attachments/assets/666776c8-9e7b-40be-a2ce-bfec7ffe17f0" /> <img width="200" alt="Teams" src="https://github.com/user-attachments/assets/3b0ef8ed-105a-409f-a8f3-6d980616f041" />
 
 ## Features
 
