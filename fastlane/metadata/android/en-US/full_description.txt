@@ -1,0 +1,17 @@
+Umpire Assistant helps baseball, softball, and kickball officials track pitch counts, runs, and game state during a game.
+
+Features:
+
+• Pitch count tracking — balls, strikes, fouls, and outs with automatic walk, strikeout, and inning advancement
+• Score tracking for home and away teams with batting team indicator
+• Inning tracker with top and bottom half display
+• Configurable game clock with expiry alert
+• Undo and redo for accidental taps
+• Volume button assignments for heads-up pitch counting without looking at the screen
+• Multiple saved configurations for different rule sets (rec league, tournament, etc.)
+• Named teams with color coding, saved per configuration
+• Flexible foul rules: fouls as strikes, strike cap, foul outs, track-only, or off
+• Large button layout option for single-hand use
+• Share final score via any app on your device
+
+No ads. No tracking. No internet connection required.
