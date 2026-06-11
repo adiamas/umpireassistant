@@ -431,7 +431,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun undo() {
         if (_undoStack.isEmpty()) return
         _redoStack.add(_state.value)
-        _state.value = _undoStack.removeLast()
+        _state.value = _undoStack.removeAt(_undoStack.lastIndex)
         _canUndo.value = _undoStack.isNotEmpty()
         _canRedo.value = true
         scheduleSessionSave()
@@ -440,7 +440,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun redo() {
         if (_redoStack.isEmpty()) return
         _undoStack.add(_state.value)
-        _state.value = _redoStack.removeLast()
+        _state.value = _redoStack.removeAt(_redoStack.lastIndex)
         _canUndo.value = true
         _canRedo.value = _redoStack.isNotEmpty()
         scheduleSessionSave()
