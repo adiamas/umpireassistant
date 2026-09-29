@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -37,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -80,6 +82,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
     var configDropdownExpanded by remember { mutableStateOf(false) }
     var pendingConfigId by remember { mutableStateOf<Int?>(null) }
     var showDeleteConfigConfirm by remember { mutableStateOf(false) }
+    var showRenameConfigDialog by remember { mutableStateOf(false) }
     val hasChanges = isDirty || state.homeScore > 0 || state.awayScore > 0 || state.inning > 1
     var dropdownExpanded by remember { mutableStateOf(false) }
     val activeConfig = storedConfigs.find { it.id == activeConfigId }
@@ -199,6 +202,16 @@ fun SettingsScreen(viewModel: GameViewModel) {
                                     .then(if (canDelete) Modifier.clickable { showDeleteConfigConfirm = true } else Modifier)
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                             )
+                            if (canDelete) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = "Rename settings",
+                                    modifier = Modifier
+                                        .clickable { showRenameConfigDialog = true }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .size(24.dp),
+                                )
+                            }
                         }
                     }
                     Button(
@@ -445,6 +458,17 @@ fun SettingsScreen(viewModel: GameViewModel) {
             },
         )
     }
+
+    if (showRenameConfigDialog && activeConfig != null) {
+        RenameConfigDialog(
+            currentName = activeConfig.name,
+            onDismiss = { showRenameConfigDialog = false },
+            onRename = { name ->
+                viewModel.renameStoredConfig(activeConfig.id, name)
+                showRenameConfigDialog = false
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -484,6 +508,47 @@ private fun SaveConfigDialog(
                     onSave(name.trim())
                 }
             }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun RenameConfigDialog(
+    currentName: String,
+    onDismiss: () -> Unit,
+    onRename: (String) -> Unit,
+) {
+    var name by remember { mutableStateOf(currentName) }
+    var showDefaultWarning by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Setting Name") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it; showDefaultWarning = false },
+                    label = { Text("Configuration name") },
+                    singleLine = true,
+                )
+                if (showDefaultWarning) {
+                    Text(
+                        "Cannot overwrite Default settings.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (name.trim().equals("Default", ignoreCase = true)) showDefaultWarning = true
+                    else onRename(name.trim())
+                },
+                enabled = name.isNotBlank(),
+            ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
