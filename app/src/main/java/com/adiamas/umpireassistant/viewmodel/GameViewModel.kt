@@ -283,13 +283,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetPitchCount() = action { update { copy(balls = 0, strikes = 0, fouls = 0) } }
 
+    private var inningLimitExtended = false
+
     fun advanceHalf() = action {
         if (_state.value.isTopHalf) {
             update { copy(isTopHalf = false, balls = 0, strikes = 0, fouls = 0, outs = 0) }
         } else {
             val newInning = _state.value.inning + 1
             update { copy(isTopHalf = true, inning = newInning, balls = 0, strikes = 0, fouls = 0, outs = 0) }
-            if (newInning > _config.value.inningsPerGame) _inningLimitReached.value = true
+            if (!inningLimitExtended && newInning > _config.value.inningsPerGame) {
+                _inningLimitReached.value = true
+                pauseTimerForEvent()
+            }
         }
     }
 
@@ -354,6 +359,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             val currentAway = _config.value.awayTeamName
             _state.value = GameState()
             clearUndoRedo()
+            inningLimitExtended = false
             _activeConfigId.value = storedConfig.id
             _config.value = storedConfig.toGameConfig(homeTeamName = currentHome, awayTeamName = currentAway)
             _timerSeconds.value = storedConfig.gameLengthMinutes * 60
@@ -428,21 +434,45 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── timer ─────────────────────────────────────────────────────────────────
 
+    private var timerWasRunning = false
+
+    private fun startTimer() {
+        if (_timerSeconds.value == 0) _timerSeconds.value = _config.value.gameLengthMinutes * 60
+        _timerRunning.value = true
+        timerJob = viewModelScope.launch {
+            while (_timerSeconds.value > 0) {
+                delay(1000)
+                _timerSeconds.value--
+            }
+            _timerRunning.value = false
+            _timerExpired.value = true
+        }
+    }
+
+    private fun pauseTimerForEvent() {
+        timerWasRunning = _timerRunning.value
+        if (_timerRunning.value) {
+            timerJob?.cancel()
+            _timerRunning.value = false
+        }
+    }
+
+    fun resumeTimerAfterEvent() {
+        if (timerWasRunning) startTimer()
+        timerWasRunning = false
+        inningLimitExtended = true
+    }
+
+    fun clearTimerEventPause() {
+        timerWasRunning = false
+    }
+
     fun toggleTimer() {
         if (_timerRunning.value) {
             timerJob?.cancel()
             _timerRunning.value = false
         } else {
-            if (_timerSeconds.value == 0) _timerSeconds.value = _config.value.gameLengthMinutes * 60
-            _timerRunning.value = true
-            timerJob = viewModelScope.launch {
-                while (_timerSeconds.value > 0) {
-                    delay(1000)
-                    _timerSeconds.value--
-                }
-                _timerRunning.value = false
-                _timerExpired.value = true
-            }
+            startTimer()
         }
     }
 
@@ -496,6 +526,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun resetGame() {
         _state.value = GameState()
         clearUndoRedo()
+        inningLimitExtended = false
         homeTeamId = null
         awayTeamId = null
         _config.value = _config.value.copy(

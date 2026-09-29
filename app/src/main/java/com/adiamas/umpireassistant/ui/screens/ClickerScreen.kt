@@ -200,10 +200,17 @@ fun ClickerScreen(viewModel: GameViewModel) {
             title = { Text("Inning Limit Reached") },
             text = { Text("The game inning limit has been reached.") },
             confirmButton = {
-                TextButton(onClick = { showInningLimitDialog = false }) { Text("Continue Game") }
+                TextButton(onClick = {
+                    viewModel.resumeTimerAfterEvent()
+                    showInningLimitDialog = false
+                }) { Text("Continue Game") }
             },
             dismissButton = {
-                TextButton(onClick = { showInningLimitDialog = false; shareGameScore() }) { Text("Share Game Score") }
+                TextButton(onClick = {
+                    viewModel.clearTimerEventPause()
+                    showInningLimitDialog = false
+                    shareGameScore()
+                }) { Text("Share Game Score") }
             },
         )
     }
