@@ -396,6 +396,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun renameStoredConfig(id: Int, name: String) {
+        viewModelScope.launch {
+            val config = repo.getConfigById(id) ?: return@launch
+            if (config.isDefault) return@launch
+            repo.updateConfig(config.copy(name = name))
+        }
+    }
+
     fun deleteStoredConfig(id: Int) {
         viewModelScope.launch {
             val toDelete = repo.getConfigById(id) ?: return@launch
