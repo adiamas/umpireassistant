@@ -259,6 +259,28 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         resetPitchCount()
     }
 
+    fun correctGameState(
+        inning: Int,
+        isTopHalf: Boolean,
+        awayScore: Int,
+        homeScore: Int,
+        balls: Int,
+        strikes: Int,
+        fouls: Int,
+    ) = action {
+        update {
+            copy(
+                inning = inning.coerceAtLeast(1),
+                isTopHalf = isTopHalf,
+                awayScore = awayScore.coerceAtLeast(0),
+                homeScore = homeScore.coerceAtLeast(0),
+                balls = balls.coerceAtLeast(0),
+                strikes = strikes.coerceAtLeast(0),
+                fouls = fouls.coerceAtLeast(0),
+            )
+        }
+    }
+
     fun resetPitchCount() = action { update { copy(balls = 0, strikes = 0, fouls = 0) } }
 
     fun advanceHalf() = action {

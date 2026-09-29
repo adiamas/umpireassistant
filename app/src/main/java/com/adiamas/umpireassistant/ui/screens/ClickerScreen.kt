@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
@@ -26,6 +27,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -50,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adiamas.umpireassistant.model.FoulMode
@@ -79,6 +84,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
     var showInningLimitDialog by remember { mutableStateOf(false) }
     var showHomeSelector by remember { mutableStateOf(false) }
     var showAwaySelector by remember { mutableStateOf(false) }
+    var showCorrectionDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(timerExpired) {
         if (timerExpired) {
@@ -112,6 +118,7 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onAddRun = { viewModel.addRun() },
             onSelectAwayTeam = { showAwaySelector = true },
             onSelectHomeTeam = { showHomeSelector = true },
+            onInningLongClick = { showCorrectionDialog = true },
         )
         if (config.largeButtonLayout) {
             LargeCountButtons(
@@ -218,6 +225,18 @@ fun ClickerScreen(viewModel: GameViewModel) {
             onSelect = { id, name, color -> viewModel.selectHomeTeam(id, name, color); showHomeSelector = false },
         )
     }
+
+    if (showCorrectionDialog) {
+        GameStateCorrectionDialog(
+            state = state,
+            config = config,
+            onDismiss = { showCorrectionDialog = false },
+            onConfirm = { inning, isTopHalf, awayScore, homeScore, balls, strikes, fouls ->
+                viewModel.correctGameState(inning, isTopHalf, awayScore, homeScore, balls, strikes, fouls)
+                showCorrectionDialog = false
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -270,6 +289,7 @@ private fun ScoreRow(
     onAddRun: () -> Unit,
     onSelectAwayTeam: () -> Unit,
     onSelectHomeTeam: () -> Unit,
+    onInningLongClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -300,6 +320,7 @@ private fun ScoreRow(
         InningBox(
             inning = state.inning,
             isTopHalf = state.isTopHalf,
+            onLongClick = onInningLongClick,
             modifier = Modifier.weight(0.65f),
         )
     }
@@ -378,17 +399,20 @@ private fun TeamScoreBox(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InningBox(
     inning: Int,
     isTopHalf: Boolean,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .fillMaxHeight()
             .clip(RoundedCornerShape(8.dp))
-            .background(ScoreBlue),
+            .background(ScoreBlue)
+            .combinedClickable(onClick = {}, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -683,6 +707,109 @@ private fun UndoRedoButton(label: String, icon: ImageVector, enabled: Boolean, o
     ) {
         Text(label, color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(36.dp).graphicsLayer { scaleX = 1.4f; scaleY = 1.4f })
+    }
+}
+
+@Composable
+private fun GameStateCorrectionDialog(
+    state: GameState,
+    config: GameConfig,
+    onDismiss: () -> Unit,
+    onConfirm: (inning: Int, isTopHalf: Boolean, awayScore: Int, homeScore: Int, balls: Int, strikes: Int, fouls: Int) -> Unit,
+) {
+    var inning by remember { mutableStateOf(state.inning) }
+    var isTopHalf by remember { mutableStateOf(state.isTopHalf) }
+    var awayScore by remember { mutableStateOf(state.awayScore) }
+    var homeScore by remember { mutableStateOf(state.homeScore) }
+    var balls by remember { mutableStateOf(state.balls) }
+    var strikes by remember { mutableStateOf(state.strikes) }
+    var fouls by remember { mutableStateOf(state.fouls) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Update Game State") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                CorrectionStepperRow("Inning", inning, { inning = (inning - 1).coerceAtLeast(1) }, { inning++ })
+                HalfSelectorRow(isTopHalf = isTopHalf, onSelect = { isTopHalf = it })
+                HorizontalDivider()
+                CorrectionStepperRow(config.awayTeamName, awayScore, { awayScore = (awayScore - 1).coerceAtLeast(0) }, { awayScore++ })
+                CorrectionStepperRow(config.homeTeamName, homeScore, { homeScore = (homeScore - 1).coerceAtLeast(0) }, { homeScore++ })
+                val maxBalls = if (config.ballsPerWalk > 0) config.ballsPerWalk - 1 else null
+                val maxStrikes = when (config.foulMode) {
+                    FoulMode.ALWAYS_STRIKES -> (config.strikesPerOut - 1 - fouls).coerceAtLeast(0)
+                    else -> config.strikesPerOut - 1
+                }
+                val maxFouls = when (config.foulMode) {
+                    FoulMode.NOT_COUNTED -> 0
+                    FoulMode.ALWAYS_STRIKES -> (config.strikesPerOut - 1 - strikes).coerceAtLeast(0)
+                    FoulMode.STRIKE_CAP -> config.maxFoulCount
+                    FoulMode.INDEPENDENT -> config.foulsPerOut - 1
+                    FoulMode.TRACK_ONLY -> null
+                }
+                HorizontalDivider()
+                CorrectionStepperRow("Balls", balls, { balls = (balls - 1).coerceAtLeast(0) }, { balls++ }, maxBalls)
+                CorrectionStepperRow("Strikes", strikes, { strikes = (strikes - 1).coerceAtLeast(0) }, { strikes++ }, maxStrikes)
+                CorrectionStepperRow("Fouls", fouls, { fouls = (fouls - 1).coerceAtLeast(0) }, { fouls++ }, maxFouls)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(inning, isTopHalf, awayScore, homeScore, balls, strikes, fouls) }) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun CorrectionStepperRow(
+    label: String,
+    value: Int,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    maxValue: Int? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, modifier = Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onDecrement) {
+                Text("−", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+            Text(
+                text = "$value",
+                modifier = Modifier.width(32.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            IconButton(onClick = onIncrement, enabled = maxValue == null || value < maxValue) {
+                Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HalfSelectorRow(isTopHalf: Boolean, onSelect: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text("Half", modifier = Modifier.weight(1f))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (isTopHalf) {
+                Button(onClick = { onSelect(true) }) { Text("Top") }
+                OutlinedButton(onClick = { onSelect(false) }) { Text("Bot") }
+            } else {
+                OutlinedButton(onClick = { onSelect(true) }) { Text("Top") }
+                Button(onClick = { onSelect(false) }) { Text("Bot") }
+            }
+        }
     }
 }
 
