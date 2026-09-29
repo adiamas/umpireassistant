@@ -1,6 +1,7 @@
 package com.adiamas.umpireassistant
 
 import android.os.Bundle
+import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -88,23 +89,36 @@ class MainActivity : ComponentActivity() {
             else -> return super.onKeyLongPress(keyCode, event)
         }
         viewModel.dispatchVolumeAction(action)
+        if (action != VolumeAction.OFF) triggerHapticFeedback()
         return true
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (!volumeUpLongPressed) viewModel.dispatchVolumeAction(viewModel.config.value.volumeUp)
+                if (!volumeUpLongPressed) {
+                    val action = viewModel.config.value.volumeUp
+                    viewModel.dispatchVolumeAction(action)
+                    if (action != VolumeAction.OFF) triggerHapticFeedback()
+                }
                 volumeUpLongPressed = false
                 true
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (!volumeDownLongPressed) viewModel.dispatchVolumeAction(viewModel.config.value.volumeDown)
+                if (!volumeDownLongPressed) {
+                    val action = viewModel.config.value.volumeDown
+                    viewModel.dispatchVolumeAction(action)
+                    if (action != VolumeAction.OFF) triggerHapticFeedback()
+                }
                 volumeDownLongPressed = false
                 true
             }
             else -> super.onKeyUp(keyCode, event)
         }
+    }
+
+    private fun triggerHapticFeedback() {
+        window.decorView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
