@@ -1,0 +1,5 @@
+- Correct the game state by long-pressing the inning box
+- Rename stored settings
+- Timer pauses when the inning limit is reached, and the limit dialog no longer repeats
+- Screen stays on while the app is open
+- Targets Android 16
