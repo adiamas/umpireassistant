@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [AppSessionEntity::class],
     version = 1,
+    exportSchema = false,
 )
 abstract class SessionDatabase : RoomDatabase() {
     abstract fun appSessionDao(): AppSessionDao

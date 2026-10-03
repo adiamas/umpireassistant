@@ -1,0 +1,186 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 9,
+    "identityHash": "2dfa7dfeb44641dc59ba755e681c6b6e",
+    "entities": [
+      {
+        "tableName": "stored_configs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `isDefault` INTEGER NOT NULL, `strikesPerOut` INTEGER NOT NULL, `ballsPerWalk` INTEGER NOT NULL, `outsPerInning` INTEGER NOT NULL, `inningsPerGame` INTEGER NOT NULL, `foulMode` TEXT NOT NULL, `maxFoulCount` INTEGER NOT NULL, `foulsPerOut` INTEGER NOT NULL, `volumeUp` TEXT NOT NULL, `volumeDown` TEXT NOT NULL, `volumeUpLong` TEXT NOT NULL, `volumeDownLong` TEXT NOT NULL, `gameLengthMinutes` INTEGER NOT NULL, `scrollTeamNames` INTEGER NOT NULL, `largeButtonLayout` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDefault",
+            "columnName": "isDefault",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "strikesPerOut",
+            "columnName": "strikesPerOut",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ballsPerWalk",
+            "columnName": "ballsPerWalk",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outsPerInning",
+            "columnName": "outsPerInning",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inningsPerGame",
+            "columnName": "inningsPerGame",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "foulMode",
+            "columnName": "foulMode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxFoulCount",
+            "columnName": "maxFoulCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "foulsPerOut",
+            "columnName": "foulsPerOut",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "volumeUp",
+            "columnName": "volumeUp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "volumeDown",
+            "columnName": "volumeDown",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "volumeUpLong",
+            "columnName": "volumeUpLong",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "volumeDownLong",
+            "columnName": "volumeDownLong",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameLengthMinutes",
+            "columnName": "gameLengthMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scrollTeamNames",
+            "columnName": "scrollTeamNames",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "largeButtonLayout",
+            "columnName": "largeButtonLayout",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "teams",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `configId` INTEGER NOT NULL, `name` TEXT NOT NULL, `color` INTEGER, FOREIGN KEY(`configId`) REFERENCES `stored_configs`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "configId",
+            "columnName": "configId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "color",
+            "columnName": "color",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_teams_configId",
+            "unique": false,
+            "columnNames": [
+              "configId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_teams_configId` ON `${TABLE_NAME}` (`configId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "stored_configs",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "configId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2dfa7dfeb44641dc59ba755e681c6b6e')"
+    ]
+  }
+}
